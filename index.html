@@ -24,8 +24,8 @@
         .logo-img {
             width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block;
         }
-        .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; }
-        .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
+        .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
+        .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
         .login-box input {
             width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
         }
@@ -43,12 +43,15 @@
         
         /* CABEÇALHO */
         .header {
-            background: #1a472a; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
-            z-index: 1000;
+            background: #1a472a; color: white; padding: 10px 20px; display: flex; justify-content: center; align-items: center;
+            z-index: 1000; position: relative; text-align: center;
         }
-        .header-titulos h1 { font-size: 18px; line-height: 1.2; }
-        .header-titulos p { font-size: 12px; opacity: 0.8; line-height: 1.2; }
-        .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .header-titulos h1 { font-size: 18px; line-height: 1.2; display: block; }
+        .header-titulos p { font-size: 12px; opacity: 0.8; line-height: 1.2; display: block; }
+        .btn-logout { 
+            background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; 
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+        }
 
         /* CORPO (LISTA + MAPA) */
         .corpo { display: flex; flex: 1; overflow: hidden; position: relative; }
