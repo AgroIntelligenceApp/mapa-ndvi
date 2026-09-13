@@ -13,13 +13,8 @@
         body { background-color: #f4f6f8; height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
         /* TELA DE LOGIN */
-        #tela-login {
-            flex: 1; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a472a 0%, #2d8659 100%);
-        }
-        .login-box {
-            background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 90%; max-width: 400px; text-align: center;
-        }
+        #tela-login { flex: 1; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a472a 0%, #2d8659 100%); }
+        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center; }
         .logo-img { width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
         .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
         .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
@@ -41,9 +36,13 @@
         .painel-lateral { width: 320px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 900; transition: transform 0.3s ease; }
         .busca-container { padding: 15px; border-bottom: 1px solid #ddd; }
         .busca-container input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        
         .botoes-acoes { padding: 10px 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
         .botoes-acoes button { flex: 1; padding: 8px; border: 1px solid #ccc; background: #f8f9fa; border-radius: 5px; cursor: pointer; font-size: 13px; }
         .btn-analisar { background: #1a472a !important; color: white !important; font-weight: bold; border: none !important; width: 100% !important; }
+        
+        .container-cultura { padding: 10px 15px; border-bottom: 1px solid #ddd; }
+        .container-cultura select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; cursor: pointer; }
         
         #lista-talhoes { flex: 1; overflow-y: auto; padding: 10px; }
         .item-talhao { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; border-radius: 5px; cursor: pointer; }
@@ -52,7 +51,18 @@
 
         .btn-flutuante { display: none; position: absolute; top: 10px; left: 10px; z-index: 1100; background: #1a472a; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); align-items: center; justify-content: center; }
         #mapa { flex: 1; background: #e9e9e9; position: relative; }
-        #barra-data { background: #333; color: white; text-align: left; padding: 15px; font-size: 13px; z-index: 1000; white-space: pre-wrap; max-height: 150px; overflow-y: auto; line-height: 1.5; }
+        
+        /* BARRA INFERIOR ORIGINAL (DATA) */
+        #barra-data { background: #333; color: white; text-align: center; padding: 10px; font-size: 13px; z-index: 1000; }
+
+        /* NOVO PAINEL FLUTUANTE DE ANÁLISE (CANTO INFERIOR DIREITO) */
+        #painel-analise {
+            position: absolute; bottom: 20px; right: 10px; z-index: 1000; background: rgba(26, 71, 42, 0.95);
+            color: white; padding: 15px; border-radius: 8px; font-size: 12px; max-width: 280px;
+            display: none; white-space: pre-wrap; box-shadow: 0 4px 8px rgba(0,0,0,0.4); line-height: 1.4;
+        }
+        #painel-analise.show { display: block; }
+        #painel-analise .btn-fechar { position: absolute; top: 5px; right: 8px; color: #aaa; cursor: pointer; font-weight: bold; }
 
         @media (max-width: 768px) {
             .btn-flutuante { display: flex; }
@@ -93,9 +103,17 @@
         <div class="corpo">
             <div class="overlay-mobile" id="overlay-mobile" onclick="fecharListaMobile()"></div>
             <button class="btn-flutuante" id="btn-flutuante" onclick="abrirListaMobile()">☰</button>
+            
             <div class="painel-lateral" id="painel-lateral">
                 <div class="busca-container">
                     <input type="text" id="campo-busca" placeholder="Buscar talhão (ex: 70010)" oninput="filtrarLista()">
+                </div>
+                <div class="container-cultura">
+                    <select id="select-cultura">
+                        <option value="cana">Cana-de-açúcar (TCH)</option>
+                        <option value="soja">Soja (Sc/ha)</option>
+                        <option value="milho">Milho (Sc/ha)</option>
+                    </select>
                 </div>
                 <div class="botoes-acoes">
                     <button onclick="marcarTodos()">Marcar Todos</button>
@@ -104,7 +122,14 @@
                 </div>
                 <div id="lista-talhoes"></div>
             </div>
-            <div id="mapa"></div>
+
+            <div id="mapa">
+                <!-- PAINEL FLUTUANTE DE ANÁLISE DENTRO DO MAPA -->
+                <div id="painel-analise">
+                    <span class="btn-fechar" onclick="document.getElementById('painel-analise').classList.remove('show')">X</span>
+                    <div id="conteudo-analise">Processando...</div>
+                </div>
+            </div>
         </div>
         <div id="barra-data">Selecione talhões e aguarde...</div>
     </div>
@@ -201,6 +226,7 @@
 
         function atualizarMapa() {
             if (!mapa) return;
+            document.getElementById('painel-analise').classList.remove('show'); // Esconde análise se mudar mapa
             mapa.eachLayer(layer => { if (layer instanceof L.GeoJSON || layer instanceof L.ImageOverlay) mapa.removeLayer(layer); });
             const checkboxes = document.querySelectorAll('.check-talhao:checked');
             let datasEncontradas = new Set();
@@ -218,29 +244,20 @@
             const grupo = L.featureGroup();
             checkboxes.forEach(cb => { const talhao = dadosTalhoes.find(t => t.id === cb.value); if (talhao && talhao.geom) { const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom; L.geoJSON(geojson).addTo(grupo); } });
             if (checkboxes.length > 0) mapa.fitBounds(grupo.getBounds().pad(0.2));
+            
+            // RESTAURADO: BARRA INFERIOR SÓ MOSTRA A DATA
             if (datasEncontradas.size > 0) { let textosFormatados = []; datasEncontradas.forEach(data => textosFormatados.push(`${data} (${calcularDiasAtras(data)})`)); document.getElementById('barra-data').innerText = "Imagens de: " + textosFormatados.join(' | '); } else { document.getElementById('barra-data').innerText = 'Data indisponível'; }
             if (isMobile) { fecharListaMobile(); }
         }
 
-        // --- FUNÇÕES DE ANÁLISE (CÁLCULO DE ÁREA EXATO + LEITURA DE CORES) ---
-
         function calcularAreaGeoJSON(geojson) {
-            let area = 0;
-            const coords = geojson.coordinates[0];
-            const R = 6378137; // Raio da Terra em metros
+            let area = 0; const coords = geojson.coordinates[0]; const R = 6378137; 
             for (let i = 0; i < coords.length; i++) {
-                const [lon1, lat1] = coords[i];
-                const nextIndex = (i + 1) % coords.length;
-                const [lon2, lat2] = coords[nextIndex];
-                
-                const radLat1 = lat1 * Math.PI / 180;
-                const radLat2 = lat2 * Math.PI / 180;
-                const deltaLon = (lon2 - lon1) * Math.PI / 180;
-                
+                const [lon1, lat1] = coords[i]; const nextIndex = (i + 1) % coords.length; const [lon2, lat2] = coords[nextIndex];
+                const radLat1 = lat1 * Math.PI / 180; const radLat2 = lat2 * Math.PI / 180; const deltaLon = (lon2 - lon1) * Math.PI / 180;
                 area += deltaLon * (2 + Math.sin(radLat1) + Math.sin(radLat2));
             }
-            area = Math.abs(area * R * R / 2);
-            return area / 10000; // Converte m² para Hectares
+            area = Math.abs(area * R * R / 2); return area / 10000; 
         }
 
         function classificarCor(r, g, b) {
@@ -253,10 +270,7 @@
                 {r:20,  g:130, b:40,  id:6, nome:"V. Densa", ndvi:0.80}
             ];
             let minDist = 999999; let melhorClasse = cores[0];
-            for(let c of cores) {
-                let dist = Math.sqrt(Math.pow(r-c.r, 2) + Math.pow(g-c.g, 2) + Math.pow(b-c.b, 2));
-                if(dist < minDist) { minDist = dist; melhorClasse = c; }
-            }
+            for(let c of cores) { let dist = Math.sqrt(Math.pow(r-c.r, 2) + Math.pow(g-c.g, 2) + Math.pow(b-c.b, 2)); if(dist < minDist) { minDist = dist; melhorClasse = c; } }
             return melhorClasse;
         }
 
@@ -264,67 +278,74 @@
             const checkboxes = document.querySelectorAll('.check-talhao:checked');
             if (checkboxes.length === 0) { alert("Selecione pelo menos um talhão na lista para analisar."); return; }
 
-            let areaTotal = 0; let ndviTotal = 0; let pixelsValidos = 0;
-            let contagem = [0, 0, 0, 0, 0, 0]; 
+            let areaTotal = 0, ndviTotal = 0, pixelsValidos = 0, contagem = [0, 0, 0, 0, 0, 0]; 
+            const painelAnalise = document.getElementById('painel-analise');
+            const conteudoAnalise = document.getElementById('conteudo-analise');
+            
+            conteudoAnalise.innerText = "Processando imagens... Aguarde.";
+            painelAnalise.classList.add('show');
 
-            document.getElementById('barra-data').innerText = "Processando imagens... Aguarde.";
-
-            let canvas = document.createElement('canvas');
-            let ctx = canvas.getContext('2d');
+            let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
             canvas.width = 512; canvas.height = 512;
 
             for (let cb of checkboxes) {
                 const talhao = dadosTalhoes.find(t => t.id === cb.value);
                 if (talhao && talhao.geom) {
                     const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
-                    let area = calcularAreaGeoJSON(geojson);
-                    areaTotal += area;
+                    areaTotal += calcularAreaGeoJSON(geojson);
 
                     if (talhao.imagem_ndvi) {
                         try {
                             await new Promise((resolve) => {
-                                let img = new Image();
-                                img.crossOrigin = "Anonymous";
+                                let img = new Image(); img.crossOrigin = "Anonymous";
                                 img.onload = function() {
-                                    ctx.clearRect(0, 0, 512, 512);
-                                    ctx.drawImage(img, 0, 0, 512, 512);
+                                    ctx.clearRect(0, 0, 512, 512); ctx.drawImage(img, 0, 0, 512, 512);
                                     let imageData = ctx.getImageData(0, 0, 512, 512).data;
                                     for (let i = 0; i < imageData.length; i += 4) {
                                         let r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
-                                        if (a > 0) { 
-                                            let classe = classificarCor(r, g, b);
-                                            contagem[classe.id - 1]++; pixelsValidos++; ndviTotal += classe.ndvi;
-                                        }
+                                        if (a > 0) { let classe = classificarCor(r, g, b); contagem[classe.id - 1]++; pixelsValidos++; ndviTotal += classe.ndvi; }
                                     }
                                     resolve();
                                 };
                                 img.onerror = function() { resolve(); };
                                 img.src = `data:image/png;base64,${talhao.imagem_ndvi}`;
                             });
-                        } catch(e) { console.error("Erro no Canvas:", e); }
+                        } catch(e) { console.error("Erro Canvas:", e); }
                     }
                 }
             }
 
             if (pixelsValidos > 0) {
                 let ndviMedio = ndviTotal / pixelsValidos;
-                let texto = "📊 LEGENDA DE BIOMASSA (% da área):\n";
-                texto += `Cor 1 (Solo/Água): ${((contagem[0]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Cor 2 (Seca): ${((contagem[1]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Cor 3 (Baixa): ${((contagem[2]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Cor 4 (Média): ${((contagem[3]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Cor 5 (Boa): ${((contagem[4]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Cor 6 (Densa): ${((contagem[5]/pixelsValidos)*100).toFixed(1)}%\n`;
+                
+                // LÓGICA DE CULTURA (CANA, SOJA, MILHO)
+                let culturaSelect = document.getElementById('select-cultura');
+                let cultura = culturaSelect.value;
+                let unidade = "sc/ha"; let fator = 100; let totalUnidade = 0; let estimativaUnidade = 0;
+
+                if(cultura === "cana") {
+                    unidade = "t/ha"; 
+                    fator = 150; // Cana tem muito mais massa. NDVI 0.8 = 120 t/ha
+                    estimativaUnidade = Math.round(ndviMedio * fator);
+                    totalUnidade = Math.round(estimativaUnidade * areaTotal);
+                } else {
+                    estimativaUnidade = Math.round(ndviMedio * fator);
+                    totalUnidade = Math.round(estimativaUnidade * areaTotal);
+                }
+
+                let texto = "📊 LEGENDA DE BIOMASSA:\n";
+                texto += `Solo/Água: ${((contagem[0]/pixelsValidos)*100).toFixed(1)}% | Seca: ${((contagem[1]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Baixa: ${((contagem[2]/pixelsValidos)*100).toFixed(1)}% | Média: ${((contagem[3]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Boa: ${((contagem[4]/pixelsValidos)*100).toFixed(1)}% | Densa: ${((contagem[5]/pixelsValidos)*100).toFixed(1)}%\n`;
                 texto += "-----------------------------------\n";
-                let fatorConversao = 100; 
-                let estimativaSacas = Math.round(ndviMedio * fatorConversao);
-                let totalSacas = Math.round(estimativaSacas * areaTotal);
-                texto += `🌾 Área Total: ${areaTotal.toFixed(2)} ha\n`;
+                texto += `🌾 Área: ${areaTotal.toFixed(2)} ha\n`;
                 texto += `📈 NDVI Médio: ${ndviMedio.toFixed(2)}\n`;
-                texto += `🚜 Estimativa: ${estimativaSacas} sc/ha | Total: ${totalSacas} sacas`;
-                document.getElementById('barra-data').innerText = texto;
+                texto += `🚜 Estimativa: ${estimativaUnidade} ${unidade}\n`;
+                texto += `📦 Total: ${totalUnidade} (${unidade.replace('/ha','')})`;
+
+                conteudoAnalise.innerText = texto;
             } else {
-                document.getElementById('barra-data').innerText = `Área Total: ${areaTotal.toFixed(2)} ha. Não há imagens para ler pixels.`;
+                conteudoAnalise.innerText = `Área: ${areaTotal.toFixed(2)} ha.\nSem pixels para ler.`;
             }
         }
 
