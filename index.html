@@ -414,19 +414,27 @@
 
         // --- NOVAS FUNÇÕES DE ANÁLISE DE BIOMASSA E PRODUTIVIDADE ---
         
-        // Calcula a área do polígono em Hectares
-        function calcularAreaGeoJSON(geojson) {
-            let area = 0;
-            const coords = geojson.coordinates[0];
-            const R = 6378137; // Raio da Terra em metros
-            for (let i = 0; i < coords.length - 1; i++) {
-                const [lon1, lat1] = coords[i];
-                const [lon2, lat2] = coords[i + 1];
-                area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
-            }
-            area = Math.abs(area * R * R / 2);
-            return area / 10000; // Converte m² para Hectares
-        }
+        // Calcula a área do polígono em Hectares (Versão Corrigida)
+function calcularAreaGeoJSON(geojson) {
+    let area = 0;
+    const coords = geojson.coordinates[0];
+    const R = 6378137; // Raio da Terra em metros
+    
+    for (let i = 0; i < coords.length; i++) {
+        const [lon1, lat1] = coords[i];
+        const nextIndex = (i + 1) % coords.length;
+        const [lon2, lat2] = coords[nextIndex];
+        
+        // Converte graus para radianos (ISSO RESOLVE O TAMANHO EXAGERADO)
+        const radLat1 = lat1 * Math.PI / 180;
+        const radLat2 = lat2 * Math.PI / 180;
+        const deltaLon = (lon2 - lon1) * Math.PI / 180;
+        
+        area += deltaLon * (2 + Math.sin(radLat1) + Math.sin(radLat2));
+    }
+    area = Math.abs(area * R * R / 2);
+    return area / 10000; // Converte m² para Hectares
+}
 
         // Faz o cálculo final e atualiza a barra inferior
         function analisarSelecao() {
