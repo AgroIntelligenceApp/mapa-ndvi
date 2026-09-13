@@ -55,14 +55,19 @@
         /* BARRA INFERIOR ORIGINAL (DATA) */
         #barra-data { background: #333; color: white; text-align: center; padding: 10px; font-size: 13px; z-index: 1000; }
 
-        /* NOVO PAINEL FLUTUANTE DE ANÁLISE (CANTO INFERIOR DIREITO) */
+        /* NOVO PAINEL FLUTUANTE DE ANÁLISE */
         #painel-analise {
             position: absolute; bottom: 20px; right: 10px; z-index: 1000; background: rgba(26, 71, 42, 0.95);
-            color: white; padding: 15px; border-radius: 8px; font-size: 12px; max-width: 280px;
-            display: none; white-space: pre-wrap; box-shadow: 0 4px 8px rgba(0,0,0,0.4); line-height: 1.4;
+            color: white; padding: 15px; border-radius: 8px; font-size: 12px; width: 220px;
+            display: none; box-shadow: 0 4px 8px rgba(0,0,0,0.4); line-height: 1.4;
         }
         #painel-analise.show { display: block; }
         #painel-analise .btn-fechar { position: absolute; top: 5px; right: 8px; color: #aaa; cursor: pointer; font-weight: bold; }
+        
+        /* ESTILO DA LEGENDA DE CORES */
+        .linha-legenda { display: flex; align-items: center; margin-bottom: 4px; }
+        .cor-quadrado { width: 12px; height: 12px; margin-right: 8px; border: 1px solid rgba(255,255,255,0.3); border-radius: 2px; }
+        .titulo-painel { font-weight: bold; margin-bottom: 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
 
         @media (max-width: 768px) {
             .btn-flutuante { display: flex; }
@@ -124,7 +129,6 @@
             </div>
 
             <div id="mapa">
-                <!-- PAINEL FLUTUANTE DE ANÁLISE DENTRO DO MAPA -->
                 <div id="painel-analise">
                     <span class="btn-fechar" onclick="document.getElementById('painel-analise').classList.remove('show')">X</span>
                     <div id="conteudo-analise">Processando...</div>
@@ -226,7 +230,7 @@
 
         function atualizarMapa() {
             if (!mapa) return;
-            document.getElementById('painel-analise').classList.remove('show'); // Esconde análise se mudar mapa
+            document.getElementById('painel-analise').classList.remove('show'); 
             mapa.eachLayer(layer => { if (layer instanceof L.GeoJSON || layer instanceof L.ImageOverlay) mapa.removeLayer(layer); });
             const checkboxes = document.querySelectorAll('.check-talhao:checked');
             let datasEncontradas = new Set();
@@ -244,8 +248,6 @@
             const grupo = L.featureGroup();
             checkboxes.forEach(cb => { const talhao = dadosTalhoes.find(t => t.id === cb.value); if (talhao && talhao.geom) { const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom; L.geoJSON(geojson).addTo(grupo); } });
             if (checkboxes.length > 0) mapa.fitBounds(grupo.getBounds().pad(0.2));
-            
-            // RESTAURADO: BARRA INFERIOR SÓ MOSTRA A DATA
             if (datasEncontradas.size > 0) { let textosFormatados = []; datasEncontradas.forEach(data => textosFormatados.push(`${data} (${calcularDiasAtras(data)})`)); document.getElementById('barra-data').innerText = "Imagens de: " + textosFormatados.join(' | '); } else { document.getElementById('barra-data').innerText = 'Data indisponível'; }
             if (isMobile) { fecharListaMobile(); }
         }
@@ -263,11 +265,11 @@
         function classificarCor(r, g, b) {
             const cores = [
                 {r:110, g:70,  b:40,  id:1, nome:"Solo/Água", ndvi:0.0},
-                {r:215, g:30,  b:25,  id:2, nome:"V. Seca", ndvi:0.075},
-                {r:240, g:140, b:40,  id:3, nome:"V. Baixa", ndvi:0.225},
-                {r:250, g:220, b:60,  id:4, nome:"V. Média", ndvi:0.375},
-                {r:130, g:200, b:60,  id:5, nome:"V. Boa", ndvi:0.525},
-                {r:20,  g:130, b:40,  id:6, nome:"V. Densa", ndvi:0.80}
+                {r:215, g:30,  b:25,  id:2, nome:"Muito Baixo", ndvi:0.075},
+                {r:240, g:140, b:40,  id:3, nome:"Baixo", ndvi:0.225},
+                {r:250, g:220, b:60,  id:4, nome:"Médio", ndvi:0.375},
+                {r:130, g:200, b:60,  id:5, nome:"Bom", ndvi:0.525},
+                {r:20,  g:130, b:40,  id:6, nome:"Alto", ndvi:0.80}
             ];
             let minDist = 999999; let melhorClasse = cores[0];
             for(let c of cores) { let dist = Math.sqrt(Math.pow(r-c.r, 2) + Math.pow(g-c.g, 2) + Math.pow(b-c.b, 2)); if(dist < minDist) { minDist = dist; melhorClasse = c; } }
@@ -282,7 +284,7 @@
             const painelAnalise = document.getElementById('painel-analise');
             const conteudoAnalise = document.getElementById('conteudo-analise');
             
-            conteudoAnalise.innerText = "Processando imagens... Aguarde.";
+            conteudoAnalise.innerHTML = "Processando imagens... Aguarde.";
             painelAnalise.classList.add('show');
 
             let canvas = document.createElement('canvas'); let ctx = canvas.getContext('2d');
@@ -318,14 +320,13 @@
             if (pixelsValidos > 0) {
                 let ndviMedio = ndviTotal / pixelsValidos;
                 
-                // LÓGICA DE CULTURA (CANA, SOJA, MILHO)
                 let culturaSelect = document.getElementById('select-cultura');
                 let cultura = culturaSelect.value;
                 let unidade = "sc/ha"; let fator = 100; let totalUnidade = 0; let estimativaUnidade = 0;
 
                 if(cultura === "cana") {
                     unidade = "t/ha"; 
-                    fator = 150; // Cana tem muito mais massa. NDVI 0.8 = 120 t/ha
+                    fator = 150; 
                     estimativaUnidade = Math.round(ndviMedio * fator);
                     totalUnidade = Math.round(estimativaUnidade * areaTotal);
                 } else {
@@ -333,19 +334,35 @@
                     totalUnidade = Math.round(estimativaUnidade * areaTotal);
                 }
 
-                let texto = "📊 LEGENDA DE BIOMASSA:\n";
-                texto += `Solo/Água: ${((contagem[0]/pixelsValidos)*100).toFixed(1)}% | Seca: ${((contagem[1]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Baixa: ${((contagem[2]/pixelsValidos)*100).toFixed(1)}% | Média: ${((contagem[3]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += `Boa: ${((contagem[4]/pixelsValidos)*100).toFixed(1)}% | Densa: ${((contagem[5]/pixelsValidos)*100).toFixed(1)}%\n`;
-                texto += "-----------------------------------\n";
-                texto += `🌾 Área: ${areaTotal.toFixed(2)} ha\n`;
-                texto += `📈 NDVI Médio: ${ndviMedio.toFixed(2)}\n`;
-                texto += `🚜 Estimativa: ${estimativaUnidade} ${unidade}\n`;
-                texto += `📦 Total: ${totalUnidade} (${unidade.replace('/ha','')})`;
+                // HTML DA LEGENDA COM QUADRADOS DE COR
+                const coresLegenda = [
+                    {cor:"rgb(110,70,40)",  nome:"Solo/Água"},
+                    {cor:"rgb(215,30,25)",  nome:"Muito Baixo"},
+                    {cor:"rgb(240,140,40)", nome:"Baixo"},
+                    {cor:"rgb(250,220,60)", nome:"Médio"},
+                    {cor:"rgb(130,200,60)", nome:"Bom"},
+                    {cor:"rgb(20,130,40)",  nome:"Alto"}
+                ];
 
-                conteudoAnalise.innerText = texto;
+                let html = `<div class="titulo-painel">📊 ANÁLISE DE BIOMASSA</div>`;
+                
+                for(let i=0; i<6; i++) {
+                    let perc = ((contagem[i]/pixelsValidos)*100).toFixed(1);
+                    html += `<div class="linha-legenda">
+                                <div class="cor-quadrado" style="background-color:${coresLegenda[i].cor};"></div>
+                                <span>${coresLegenda[i].nome}: ${perc}%</span>
+                             </div>`;
+                }
+
+                html += `<div style="border-top:1px solid rgba(255,255,255,0.3); margin:8px 0;"></div>`;
+                html += `🌾 Área: <b>${areaTotal.toFixed(2)} ha</b><br>`;
+                html += `📈 NDVI Médio: <b>${ndviMedio.toFixed(2)}</b><br>`;
+                html += `🚜 Estimativa: <b>${estimativaUnidade} ${unidade}</b><br>`;
+                html += `📦 Total: <b>${totalUnidade} ${unidade.replace('/ha','')}</b>`;
+
+                conteudoAnalise.innerHTML = html;
             } else {
-                conteudoAnalise.innerText = `Área: ${areaTotal.toFixed(2)} ha.\nSem pixels para ler.`;
+                conteudoAnalise.innerHTML = `Área: ${areaTotal.toFixed(2)} ha.<br>Sem pixels para ler.`;
             }
         }
 
