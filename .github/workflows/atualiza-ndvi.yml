@@ -2,7 +2,8 @@ name: Atualiza NDVI
 
 on:
   schedule:
-    - cron: '0 12 */2 * *'   # a cada 2 dias, as 09h (horario de Brasilia)
+    # Roda nos dias 1, 6, 11, 16, 21 e 26 de cada mes, as 12h (UTC) = 09h de Brasilia
+    - cron: '0 12 1,6,11,16,21,26 * *'
   workflow_dispatch:          # permite rodar manualmente pelo botao
 
 jobs:
