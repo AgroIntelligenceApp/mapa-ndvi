@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agro Intelligence
-                Mapa NDVI</title>
+    <title>Agro Intelligence | Mapa NDVI</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -21,7 +20,12 @@
             background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             width: 90%; max-width: 400px; text-align: center;
         }
-        .login-box h2 { color: #1a472a; margin-bottom: 20px; }
+        /* Classe da Logo */
+        .logo-img {
+            width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block;
+        }
+        .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; }
+        .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; }
         .login-box input {
             width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
         }
@@ -39,10 +43,11 @@
         
         /* CABEÇALHO */
         .header {
-            background: #1a472a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: #1a472a; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center;
             z-index: 1000;
         }
-        .header h1 { font-size: 18px; }
+        .header-titulos h1 { font-size: 18px; line-height: 1.2; }
+        .header-titulos p { font-size: 12px; opacity: 0.8; line-height: 1.2; }
         .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; }
 
         /* CORPO (LISTA + MAPA) */
@@ -57,10 +62,12 @@
         .busca-container input {
             width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px;
         }
-        .botoes-acoes { padding: 10px 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; }
+        .botoes-acoes { padding: 10px 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
         .botoes-acoes button {
             flex: 1; padding: 8px; border: 1px solid #ccc; background: #f8f9fa; border-radius: 5px; cursor: pointer; font-size: 13px;
         }
+        .btn-analisar { background: #1a472a !important; color: white !important; font-weight: bold; border: none !important; width: 100% !important; }
+        
         #lista-talhoes { flex: 1; overflow-y: auto; padding: 10px; }
         .item-talhao { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; border-radius: 5px; cursor: pointer; }
         .item-talhao:active { background-color: #f0f0f0; }
@@ -100,7 +107,6 @@
                 background: rgba(0,0,0,0.4); z-index: 800;
             }
             .overlay-mobile.visivel { display: block; }
-            .botoes-acoes { display: none; } /* Esconde no mobile para ganhar espaço */
         }
     </style>
 </head>
@@ -109,7 +115,13 @@
     <!-- TELA DE LOGIN -->
     <div id="tela-login">
         <div class="login-box">
-            <h2>📈 Agro Intelligence Mapa NDVI</h2>
+            <!-- Se não tiver logo.png, ele mostra um ícone verde com a letra A -->
+            <img src="logo.png" alt="Agro Intelligence" class="logo-img" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+            <div id="logo-fallback" class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold" style="display: none; width: 64px; height: 64px;">A</div>
+            
+            <h2>Agro Intelligence</h2>
+            <p class="subtitulo">Mapa NDVI</p>
+            
             <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: 17997927252)" maxlength="15">
             <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
             <button onclick="fazerLogin()">Entrar</button>
@@ -126,7 +138,10 @@
     <!-- TELA DO APP -->
     <div id="tela-app">
         <div class="header">
-            <h1>Agro Intelligence Mapa NDVI</h1>
+            <div class="header-titulos">
+                <h1>Agro Intelligence</h1>
+                <p>Mapa NDVI</p>
+            </div>
             <button class="btn-logout" onclick="deslogar()">Sair</button>
         </div>
         
@@ -144,6 +159,7 @@
                 <div class="botoes-acoes">
                     <button onclick="marcarTodos()">Marcar Todos</button>
                     <button onclick="desmarcarTodos()">Desmarcar Todos</button>
+                    <button onclick="analisarSelecao()" class="btn-analisar">Analisar Biomassa</button>
                 </div>
                 <div id="lista-talhoes">
                     <!-- Itens serão inseridos aqui via JS -->
@@ -270,7 +286,7 @@
         async function buscarTalhoes() {
             const { data, error } = await supabaseClient
                 .from('talhoes')
-                .select('id, codigo_talhao, geom, imagem_ndvi, data_ndvi')
+                .select('id, codigo_talhao, geom, imagem_ndvi, data_ndvi, ndvi_medio, area_hectares')
                 .eq('cliente_id', clienteId)
                 .eq('tem_ndvi', true);
 
@@ -315,7 +331,7 @@
         function iniciarMapa() {
             if (!mapa) {
                 mapa = L.map('mapa', { zoomControl: false }).setView([-20.5, -49.5], 10);
-                L.control.zoom({ position: 'topright' }).addTo(mapa); // Move zoom pro canto direito no mobile
+                L.control.zoom({ position: 'topright' }).addTo(mapa); 
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     attribution: 'Tiles &copy; Esri',
                     maxZoom: 18
@@ -388,9 +404,71 @@
                 document.getElementById('barra-data').innerText = 'Data indisponível';
             }
 
-            // NOVIDADE: Fecha a gaveta automaticamente no celular após seleção
             if (isMobile) {
                 fecharListaMobile();
+            }
+        }
+
+        // --- NOVAS FUNÇÕES DE ANÁLISE DE BIOMASSA E PRODUTIVIDADE ---
+        
+        // Calcula a área do polígono em Hectares
+        function calcularAreaGeoJSON(geojson) {
+            let area = 0;
+            const coords = geojson.coordinates[0];
+            const R = 6378137; // Raio da Terra em metros
+            for (let i = 0; i < coords.length - 1; i++) {
+                const [lon1, lat1] = coords[i];
+                const [lon2, lat2] = coords[i + 1];
+                area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+            }
+            area = Math.abs(area * R * R / 2);
+            return area / 10000; // Converte m² para Hectares
+        }
+
+        // Faz o cálculo final e atualiza a barra inferior
+        function analisarSelecao() {
+            const checkboxes = document.querySelectorAll('.check-talhao:checked');
+            if (checkboxes.length === 0) {
+                alert("Selecione pelo menos um talhão na lista para analisar.");
+                return;
+            }
+
+            let areaTotal = 0;
+            let ndviTotal = 0;
+            let talhoesValidos = 0;
+
+            checkboxes.forEach(cb => {
+                const talhao = dadosTalhoes.find(t => t.id === cb.value);
+                if (talhao && talhao.geom) {
+                    const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
+                    
+                    // Usa a área do banco se existir, senão calcula geometricamente
+                    let area = talhao.area_hectares || calcularAreaGeoJSON(geojson);
+                    areaTotal += area;
+
+                    // Soma o NDVI médio se o Python tiver enviado
+                    if (talhao.ndvi_medio !== null && talhao.ndvi_medio !== undefined) {
+                        ndviTotal += talhao.ndvi_medio;
+                        talhoesValidos++;
+                    }
+                }
+            });
+
+            if (talhoesValidos > 0) {
+                let ndviMedioGeral = ndviTotal / talhoesValidos;
+                
+                // Fórmula de Estimativa (Exemplo: NDVI 0.8 = 80 sc/ha). 
+                // Mude o fatorConversao conforme a cultura real!
+                let fatorConversao = 100; 
+                let estimativaSacas = ndviMedioGeral * fatorConversao;
+                let producaoTotalEstimada = estimativaSacas * areaTotal;
+
+                let msg = `🌾 Área: ${areaTotal.toFixed(2)} ha | 📊 NDVI Médio: ${ndviMedioGeral.toFixed(2)} | 🚜 Estimativa: ${estimativaSacas.toFixed(0)} sc/ha | 📦 Total: ${producaoTotalEstimada.toFixed(0)} sacas`;
+                document.getElementById('barra-data').innerText = msg;
+            } else {
+                // Se o Python ainda não calculou o NDVI médio
+                let msg = `🌾 Área Selecionada: ${areaTotal.toFixed(2)} hectares. (NDVI médio indisponível para estimativa de produtividade)`;
+                document.getElementById('barra-data').innerText = msg;
             }
         }
 
