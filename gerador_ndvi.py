@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Gerador de NDVI (Sentinel-2) para os talhoes do Supabase.
-Grava imagem (base64) + data real da cena do satelite.
-Roda no GitHub Actions via .github/workflows/atualiza-ndvi.yml
+Grava imagem (base64) + data real da cena + NDVI medio + Area em Hectares.
 """
 import io
 import os
 import json
 import time
 import base64
+import math
 
 import requests
 from PIL import Image, ImageDraw
@@ -109,6 +109,7 @@ def ultima_cena(wkt, depois_de):
     return None
 
 
+# O Evalscript agora esconde o valor do NDVI (escalado de 0 a 255) no canal Alpha (4ª banda)
 EVALSCRIPT = """
 //VERSION=3
 function setup() {
@@ -124,7 +125,13 @@ function evaluatePixel(s) {
   else if (ndvi < 0.45) { r = 250; g = 220; b = 60; }
   else if (ndvi < 0.60) { r = 130; g = 200; b = 60; }
   else                  { r = 20;  g = 130; b = 40; }
-  return [r, g, b, Math.round(s.dataMask * 255)];
+  
+  // Esconde o NDVI no canal Alpha: NDVI de -1 a 1 vira de 0 a 255
+  var ndvi_scaled = Math.round((ndvi + 1) * 127.5);
+  if (ndvi_scaled > 255) ndvi_scaled = 255;
+  if (ndvi_scaled < 0) ndvi_scaled = 0;
+  
+  return [r, g, b, (s.dataMask == 1) ? ndvi_scaled : 0];
 }
 """
 
@@ -178,8 +185,22 @@ def gerar_png_ndvi(bbox, data_cena):
     return r.content
 
 
-def recortar_no_poligono(png_bytes, aneis, bbox):
-    """Aplica mascara alpha deixando visivel apenas a area do poligono."""
+def calcular_area_hectares(geom):
+    """Calcula a area de um poligono GeoJSON em hectares (Formula Esferica)."""
+    coords = extrair_poligono(geom)[0]
+    R = 6378137.0 # Raio da Terra em metros
+    area = 0.0
+    for i in range(len(coords) - 1):
+        lon1, lat1 = math.radians(coords[i][0]), math.radians(coords[i][1])
+        lon2, lat2 = math.radians(coords[i+1][0]), math.radians(coords[i+1][1])
+        area += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2))
+    area = abs(area * R * R / 2.0)
+    return area / 10000.0 # Converte m2 para Hectares
+
+
+def recortar_e_calcular_ndvi(png_bytes, aneis, bbox):
+    """Aplica mascara alpha deixando visivel apenas a area do poligono.
+    Aproveita para ler o NDVI escondido no canal Alpha e calcular a media."""
     minx, miny, maxx, maxy = bbox
     img = Image.open(io.BytesIO(png_bytes)).convert("RGBA")
     w, h = img.size
@@ -193,18 +214,49 @@ def recortar_no_poligono(png_bytes, aneis, bbox):
     d.polygon(px(aneis[0]), fill=255)
     for furo in aneis[1:]:
         d.polygon(px(furo), fill=0)
+
+    # 1. Calcula NDVI Medio
+    pix = img.load()
+    pix_mask = mascara.load()
+    ndvi_soma = 0.0
+    pixels_validos = 0
+    
+    for x in range(w):
+        for y in range(h):
+            if pix_mask[x, y] == 255: # Dentro do talhao
+                alpha = pix[x, y][3]
+                if alpha > 0:
+                    # Converte o valor 0-255 de volta para -1 a 1
+                    ndvi = (alpha / 127.5) - 1.0
+                    ndvi_soma += ndvi
+                    pixels_validos += 1
+
+    ndvi_medio = 0.0
+    if pixels_validos > 0:
+        ndvi_medio = ndvi_soma / pixels_validos
+
+    # 2. Aplica a mascara final para a imagem web (deixa transparente fora do talhao)
     img.putalpha(mascara)
-    return img
+    return img, ndvi_medio
 
 
-def salvar(sb, talhao_id, img, data_cena):
+def salvar(sb, talhao_id, img, data_cena, ndvi_medio, area_ha):
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
+    
+    # Arredonda valores para nao lotar o banco com casas decimais desnecessarias
+    ndvi_round = round(ndvi_medio, 3)
+    area_round = round(area_ha, 2)
+
     sb.table("talhoes").update({
         "imagem_ndvi": base64.b64encode(buf.getvalue()).decode(),
         "data_ndvi": data_cena,
         "tem_ndvi": True,
+        "ndvi_medio": ndvi_round,
+        "area_hectares": area_round
     }).eq("id", talhao_id).execute()
+    
+    print(f"      -> NDVI Medio: {ndvi_round} | Area: {area_round} ha")
 
 
 def main():
@@ -234,11 +286,18 @@ def main():
                 print(f"[{nome}] ja esta em dia.")
                 continue
 
+            print(f"[{nome}] Buscando imagem de {cena}...")
+            
+            # Calcula area em hectares antes de baixar a imagem
+            area_ha = calcular_area_hectares(geom)
+            
             png = gerar_png_ndvi(bbox, cena)
-            img = recortar_no_poligono(png, aneis, bbox)
-            salvar(sb, t["id"], img, cena)
+            img, ndvi_medio = recortar_e_calcular_ndvi(png, aneis, bbox)
+            
+            salvar(sb, t["id"], img, cena, ndvi_medio, area_ha)
             atualizados += 1
-            print(f"[{nome}] ATUALIZADO com imagem de {cena}")
+            print(f"[{nome}] ATUALIZADO com sucesso!")
+            
         except Exception as e:
             print(f"[{nome}] ERRO: {e}")
         finally:
