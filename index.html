@@ -20,7 +20,6 @@
             background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             width: 90%; max-width: 400px; text-align: center;
         }
-        /* Classe da Logo */
         .logo-img {
             width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block;
         }
@@ -87,10 +86,10 @@
         /* MAPA */
         #mapa { flex: 1; background: #e9e9e9; position: relative; }
         
-        /* BARRA DE DATA */
+        /* BARRA DE DATA E ANÁLISE */
         #barra-data {
-            background: #333; color: white; text-align: center; padding: 10px; font-size: 13px;
-            z-index: 1000;
+            background: #333; color: white; text-align: left; padding: 15px; font-size: 13px;
+            z-index: 1000; white-space: pre-wrap; max-height: 150px; overflow-y: auto; line-height: 1.5;
         }
 
         /* RESPONSIVIDADE MOBILE */
@@ -99,12 +98,11 @@
             .painel-lateral {
                 position: absolute; top: 0; left: 0; height: 100%; width: 85%; max-width: 320px;
                 box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-                transform: translateX(-100%); /* Escondido por padrão */
+                transform: translateX(-100%); 
             }
             .painel-lateral.aberto {
-                transform: translateX(0); /* Visível */
+                transform: translateX(0); 
             }
-            /* Fundo escuro ao abrir a gaveta */
             .overlay-mobile {
                 display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
                 background: rgba(0,0,0,0.4); z-index: 800;
@@ -118,7 +116,6 @@
     <!-- TELA DE LOGIN -->
     <div id="tela-login">
         <div class="login-box">
-            <!-- Se não tiver logo.png, ele mostra um ícone verde com a letra A -->
             <img src="logo.png" alt="Agro Intelligence" class="logo-img" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
             <div id="logo-fallback" class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold" style="display: none; width: 64px; height: 64px;">A</div>
             
@@ -149,10 +146,7 @@
         </div>
         
         <div class="corpo">
-            <!-- Fundo escuro quando a lista está aberta no celular -->
             <div class="overlay-mobile" id="overlay-mobile" onclick="fecharListaMobile()"></div>
-            
-            <!-- Botão que abre a lista no celular -->
             <button class="btn-flutuante" id="btn-flutuante" onclick="abrirListaMobile()">☰</button>
 
             <div class="painel-lateral" id="painel-lateral">
@@ -164,9 +158,7 @@
                     <button onclick="desmarcarTodos()">Desmarcar Todos</button>
                     <button onclick="analisarSelecao()" class="btn-analisar">Analisar Biomassa</button>
                 </div>
-                <div id="lista-talhoes">
-                    <!-- Itens serão inseridos aqui via JS -->
-                </div>
+                <div id="lista-talhoes"></div>
             </div>
             <div id="mapa"></div>
         </div>
@@ -176,7 +168,7 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Turf JS (Biblioteca para cálculo exato de áreas) -->
+    <!-- Turf JS -->
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.0.0/turf.min.js"></script>
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -414,23 +406,44 @@
             }
         }
 
-        // --- FUNÇÕES DE ANÁLISE DE BIOMASSA E PRODUTIVIDADE ---
+        // --- FUNÇÕES DE ANÁLISE DE BIOMASSA (LEITURA DE CORES) ---
         
-        // Calcula a área do polígono em Hectares usando Turf.js (Precisão Profissional)
         function calcularAreaGeoJSON(geojson) {
             try {
                 let geom = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
                 let feature = turf.feature(geom);
                 let areaMetrosQuadrados = turf.area(feature);
-                return areaMetrosQuadrados / 10000; // Converte m² para Hectares
+                return areaMetrosQuadrados / 10000; 
             } catch (e) {
                 console.error("Erro ao calcular área com Turf:", e);
                 return 0;
             }
         }
 
-        // Faz o cálculo final e atualiza a barra inferior
-        function analisarSelecao() {
+        // Classifica o pixel RGB baseado nas 6 cores do seu script Python
+        function classificarCor(r, g, b) {
+            const cores = [
+                {r:110, g:70,  b:40,  id:1, nome:"Solo/Água", ndvi:0.0},
+                {r:215, g:30,  b:25,  id:2, nome:"V. Seca", ndvi:0.075},
+                {r:240, g:140, b:40,  id:3, nome:"V. Baixa", ndvi:0.225},
+                {r:250, g:220, b:60,  id:4, nome:"V. Média", ndvi:0.375},
+                {r:130, g:200, b:60,  id:5, nome:"V. Boa", ndvi:0.525},
+                {r:20,  g:130, b:40,  id:6, nome:"V. Densa", ndvi:0.80}
+            ];
+            
+            let minDist = 999999;
+            let melhorClasse = cores[0];
+            for(let c of cores) {
+                let dist = Math.sqrt(Math.pow(r-c.r, 2) + Math.pow(g-c.g, 2) + Math.pow(b-c.b, 2));
+                if(dist < minDist) {
+                    minDist = dist;
+                    melhorClasse = c;
+                }
+            }
+            return melhorClasse;
+        }
+
+        async function analisarSelecao() {
             const checkboxes = document.querySelectorAll('.check-talhao:checked');
             if (checkboxes.length === 0) {
                 alert("Selecione pelo menos um talhão na lista para analisar.");
@@ -439,39 +452,81 @@
 
             let areaTotal = 0;
             let ndviTotal = 0;
-            let talhoesValidos = 0;
+            let pixelsValidos = 0;
+            let contagem = [0, 0, 0, 0, 0, 0]; // Contadores para as 6 classes
 
-            checkboxes.forEach(cb => {
+            // Cria um canvas oculto para ler os pixels
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            canvas.width = 512; // Mesmo tamanho da imagem gerada no Python
+            canvas.height = 512;
+
+            document.getElementById('barra-data').innerText = "Processando imagens... Aguarde.";
+
+            for (let cb of checkboxes) {
                 const talhao = dadosTalhoes.find(t => t.id === cb.value);
                 if (talhao && talhao.geom) {
                     const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
-                    
-                    // Força calcular a área pelo desenho do mapa (ignora o banco de dados)
-let area = calcularAreaGeoJSON(geojson);
+                    let area = calcularAreaGeoJSON(geojson);
+                    areaTotal += area;
 
-                    // Soma o NDVI médio se o Python tiver enviado
-                    if (talhao.ndvi_medio !== null && talhao.ndvi_medio !== undefined) {
-                        ndviTotal += talhao.ndvi_medio;
-                        talhoesValidos++;
+                    if (talhao.imagem_ndvi) {
+                        // Carrega a imagem no canvas para ler os pixels
+                        await new Promise((resolve) => {
+                            let img = new Image();
+                            img.crossOrigin = "Anonymous";
+                            img.onload = function() {
+                                ctx.clearRect(0, 0, 512, 512);
+                                ctx.drawImage(img, 0, 0, 512, 512);
+                                let imageData = ctx.getImageData(0, 0, 512, 512).data;
+                                
+                                for (let i = 0; i < imageData.length; i += 4) {
+                                    let r = imageData[i];
+                                    let g = imageData[i+1];
+                                    let b = imageData[i+2];
+                                    let a = imageData[i+3];
+                                    
+                                    // Se o pixel não for transparente, está dentro do talhão
+                                    if (a > 0) { 
+                                        let classe = classificarCor(r, g, b);
+                                        contagem[classe.id - 1]++;
+                                        pixelsValidos++;
+                                        ndviTotal += classe.ndvi;
+                                    }
+                                }
+                                resolve();
+                            };
+                            img.src = `data:image/png;base64,${talhao.imagem_ndvi}`;
+                        });
                     }
                 }
-            });
+            }
 
-            if (talhoesValidos > 0) {
-                let ndviMedioGeral = ndviTotal / talhoesValidos;
+            if (pixelsValidos > 0) {
+                let ndviMedio = ndviTotal / pixelsValidos;
                 
-                // Fórmula de Estimativa (Exemplo: NDVI 0.8 = 80 sc/ha). 
-                // Mude o fatorConversao conforme a cultura real!
-                let fatorConversao = 100; 
-                let estimativaSacas = ndviMedioGeral * fatorConversao;
-                let producaoTotalEstimada = estimativaSacas * areaTotal;
+                // Monta a Legenda
+                let texto = "📊 LEGENDA DE BIOMASSA (% da área):\n";
+                texto += `Cor 1 (Solo/Água): ${((contagem[0]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Cor 2 (Seca): ${((contagem[1]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Cor 3 (Baixa): ${((contagem[2]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Cor 4 (Média): ${((contagem[3]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Cor 5 (Boa): ${((contagem[4]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += `Cor 6 (Densa): ${((contagem[5]/pixelsValidos)*100).toFixed(1)}%\n`;
+                texto += "-----------------------------------\n";
+                
+                // Estimativa Final
+                let fatorConversao = 100; // Exemplo: NDVI 0.8 = 80 sc/ha
+                let estimativaSacas = Math.round(ndviMedio * fatorConversao);
+                let totalSacas = Math.round(estimativaSacas * areaTotal);
+                
+                texto += `🌾 Área Total: ${areaTotal.toFixed(2)} ha\n`;
+                texto += `📈 NDVI Médio: ${ndviMedio.toFixed(2)}\n`;
+                texto += `🚜 Estimativa: ${estimativaSacas} sc/ha | Total: ${totalSacas} sacas`;
 
-                let msg = `🌾 Área: ${areaTotal.toFixed(2)} ha | 📊 NDVI Médio: ${ndviMedioGeral.toFixed(2)} | 🚜 Estimativa: ${estimativaSacas.toFixed(0)} sc/ha | 📦 Total: ${producaoTotalEstimada.toFixed(0)} sacas`;
-                document.getElementById('barra-data').innerText = msg;
+                document.getElementById('barra-data').innerText = texto;
             } else {
-                // Se o Python ainda não calculou o NDVI médio
-                let msg = `🌾 Área Selecionada: ${areaTotal.toFixed(2)} hectares. (NDVI médio indisponível para estimativa de produtividade)`;
-                document.getElementById('barra-data').innerText = msg;
+                document.getElementById('barra-data').innerText = `Área Total: ${areaTotal.toFixed(2)} ha. Não há imagens para ler os pixels.`;
             }
         }
 
