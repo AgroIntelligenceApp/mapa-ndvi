@@ -446,9 +446,8 @@
                 if (talhao && talhao.geom) {
                     const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
                     
-                    // Usa a área do banco se existir, senão calcula geometricamente
-                    let area = talhao.area_hectares || calcularAreaGeoJSON(geojson);
-                    areaTotal += area;
+                    // Força calcular a área pelo desenho do mapa (ignora o banco de dados)
+let area = calcularAreaGeoJSON(geojson);
 
                     // Soma o NDVI médio se o Python tiver enviado
                     if (talhao.ndvi_medio !== null && talhao.ndvi_medio !== undefined) {
