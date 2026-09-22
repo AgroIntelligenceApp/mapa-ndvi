@@ -15,216 +15,84 @@
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-lg bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-700">
-        
         <div class="text-center mb-6">
             <a href="dashboard.html" class="text-gray-400 text-sm hover:text-white">← Voltar ao Painel</a>
             <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto my-3 text-2xl font-bold">N</div>
             <h1 class="text-xl font-bold">Cadastro de Talhões</h1>
-            <p class="text-gray-400 text-sm">Escolha o método de cadastro</p>
         </div>
-
-        <!-- Abas de Seleção -->
         <div class="flex p-1 bg-gray-700 rounded-lg mb-6">
             <button id="tab-manual-btn" onclick="switchTab('manual')" class="tab-active flex-1 py-2 rounded-md font-bold transition">Manual (Demo)</button>
             <button id="tab-lote-btn" onclick="switchTab('lote')" class="tab-inactive flex-1 py-2 rounded-md font-bold transition">Em Lote (Excel)</button>
         </div>
 
-        <!-- FORMULÁRIO MANUAL -->
+        <!-- MANUAL -->
         <div id="form-manual" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp</label>
-                    <input type="tel" id="manual-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="17997927252">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome do Talhão</label>
-                    <input type="text" id="manual-nome" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: 10">
-                </div>
+                <input type="tel" id="manual-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="WhatsApp">
+                <input type="text" id="manual-nome" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Nome Talhão">
             </div>
-
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Fazenda</label>
-                    <input type="text" id="manual-fazenda" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: São Jorge">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Código do Bloco</label>
-                    <input type="text" id="manual-bloco" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: 1010">
-                </div>
+                <input type="text" id="manual-fazenda" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Fazenda">
+                <input type="text" id="manual-bloco" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Bloco">
             </div>
-
             <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Variedade</label>
-                    <input type="text" id="manual-variedade" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: RB92579">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
-                    <select id="manual-tipo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
-                        <option value="Plantio">Plantio</option>
-                        <option value="Soca">Soca</option>
-                    </select>
-                </div>
+                <input type="text" id="manual-variedade" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Variedade">
+                <input type="text" id="manual-ambiente" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Ambiente">
             </div>
-
             <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Corte</label>
-                    <select id="manual-corte" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
-                        <option value="1">1º</option><option value="2">2º</option><option value="3">3º</option><option value="4">4º</option><option value="5">5º</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Data Plantio</label>
-                    <input type="date" id="manual-data-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Data Corte</label>
-                    <input type="date" id="manual-data-ct" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
-                </div>
+                <select id="manual-tipo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"><option>Plantio</option><option>Soca</option></select>
+                <select id="manual-corte" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option></select>
+                <input type="date" id="manual-data-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
             </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">TCH Planejado</label>
-                    <input type="number" id="manual-tch-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="85">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">TCH Realizado</label>
-                    <input type="number" id="manual-tch-re" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="0">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo KML/KMZ</label>
-                <input type="file" id="manual-arquivo" accept=".kml,.kmz" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
-            </div>
-
+            <input type="file" id="manual-arquivo" accept=".kml,.kmz" required class="w-full text-sm text-gray-400 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
             <div id="statusManual" class="text-sm text-center hidden p-3 rounded-lg"></div>
-            <button type="button" onclick="enviarManual()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">Cadastrar Talhão</button>
+            <button type="button" onclick="enviarManual()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">Cadastrar</button>
         </div>
 
-        <!-- FORMULÁRIO EM LOTE -->
+        <!-- LOTE -->
         <div id="form-lote" class="space-y-4 hidden">
-            <div>
-                <button onclick="baixarModelo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition">📥 Baixar Modelo de Excel</button>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp do Cliente</label>
-                <input type="tel" id="lote-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="DDD + Número">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo Excel (.xlsx ou .csv)</label>
-                <input type="file" id="lote-excel" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo Único KML/KMZ (do Google Earth)</label>
-                <input type="file" id="lote-kml" accept=".kml,.kmz" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
-            </div>
-
+            <button onclick="baixarModelo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">📥 Baixar Modelo de Excel</button>
+            <input type="tel" id="lote-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="WhatsApp do Cliente">
+            <input type="file" id="lote-excel" accept=".xlsx, .csv" class="w-full text-sm text-gray-400 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+            <input type="file" id="lote-kml" accept=".kml,.kmz" class="w-full text-sm text-gray-400 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
             <div id="statusLote" class="text-sm text-center hidden p-3 rounded-lg"></div>
-            <button type="button" onclick="enviarLote()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">Cadastrar Lote Completo</button>
+            <button type="button" onclick="enviarLote()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">Cadastrar Lote</button>
         </div>
     </div>
 
     <script>
-        const supabaseClient = window.supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+        const sb = window.supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
 
-        function switchTab(tab) {
-            if (tab === 'manual') {
-                document.getElementById('form-manual').classList.remove('hidden');
-                document.getElementById('form-lote').classList.add('hidden');
-                document.getElementById('tab-manual-btn').className = "tab-active flex-1 py-2 rounded-md font-bold transition";
-                document.getElementById('tab-lote-btn').className = "tab-inactive flex-1 py-2 rounded-md font-bold transition";
-            } else {
-                document.getElementById('form-manual').classList.add('hidden');
-                document.getElementById('form-lote').classList.remove('hidden');
-                document.getElementById('tab-manual-btn').className = "tab-inactive flex-1 py-2 rounded-md font-bold transition";
-                document.getElementById('tab-lote-btn').className = "tab-active flex-1 py-2 rounded-md font-bold transition";
-            }
+        function switchTab(t) {
+            document.getElementById('form-manual').classList.toggle('hidden', t !== 'manual');
+            document.getElementById('form-lote').classList.toggle('hidden', t !== 'lote');
+            document.getElementById('tab-manual-btn').className = (t === 'manual' ? 'tab-active' : 'tab-inactive') + " flex-1 py-2 rounded-md font-bold transition";
+            document.getElementById('tab-lote-btn').className = (t === 'lote' ? 'tab-active' : 'tab-inactive') + " flex-1 py-2 rounded-md font-bold transition";
         }
 
         function baixarModelo() {
             const dados = [
-                { talhao: "10", nome_fazenda: "São Jorge", codigo_bloco: "1010", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
-                { talhao: "11", nome_fazenda: "São Jorge", codigo_bloco: "1010", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
+                { talhao: "10", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A1", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
+                { talhao: "11", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A2", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
             ];
             const ws = XLSX.utils.json_to_sheet(dados);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Talhões");
-            XLSX.writeFile(wb, "Modelo_Cadastro_Lote.xlsx");
+            XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), ws, "Talhões")), "Modelo.xlsx");
         }
 
-        function normalizarNome(str) {
-            return String(str).replace(/\s+/g, '').toLowerCase();
-        }
+        function normalizarNome(str) { return String(str).replace(/\s+/g, '').toLowerCase(); }
 
-        // Lê UM ÚNICO arquivo KML/KMZ e extrai TODOS os polígonos (Placemarks) com seus nomes
         async function lerPoligonosDeKmlUnico(file) {
-            let kmlText = '';
-            if (file.name.toLowerCase().endsWith('.kmz')) {
-                const zip = await JSZip.loadAsync(file);
-                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
-                kmlText = await zip.files[kmlFile].async('string');
-            } else {
-                kmlText = await file.text();
-            }
-
-            const parser = new DOMParser();
-            const kml = parser.parseFromString(kmlText, 'text/xml');
-            const placemarks = kml.getElementsByTagName('Placemark');
+            let kmlText = file.name.toLowerCase().endsWith('.kmz') ? (await (await JSZip.loadAsync(file)).files[Object.keys((await JSZip.loadAsync(file)).files).find(f => f.endsWith('.kml'))].async('string')) : await file.text();
+            const placemarks = new DOMParser().parseFromString(kmlText, 'text/xml').getElementsByTagName('Placemark');
             let poligonos = [];
-
-            for (let i = 0; i < placemarks.length; i++) {
-                const pm = placemarks[i];
-                const nameEl = pm.getElementsByTagName('name')[0];
-                const coordsEl = pm.getElementsByTagName('coordinates')[0];
-                
+            for (let pm of placemarks) {
+                const nameEl = pm.getElementsByTagName('name')[0]; const coordsEl = pm.getElementsByTagName('coordinates')[0];
                 if (!nameEl || !coordsEl) continue;
-
-                const nome = nameEl.textContent.trim();
-                const coordsText = coordsEl.textContent.trim();
-                const coordsArray = coordsText.split(/\s+/).map(coord => {
-                    const parts = coord.split(',');
-                    const lon = parseFloat(parts[0]);
-                    const lat = parseFloat(parts[1]);
-                    return [lon, lat];
-                });
-
-                if (coordsArray.length > 0 && coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) {
-                    coordsArray.push(coordsArray[0]);
-                }
-
-                poligonos.push({
-                    nome: nome,
-                    geom: { "type": "Polygon", "coordinates": [coordsArray] }
-                });
+                const coordsArray = coordsEl.textContent.trim().split(/\s+/).map(c => [parseFloat(c.split(',')[0]), parseFloat(c.split(',')[1])]);
+                if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) coordsArray.push(coordsArray[0]);
+                poligonos.push({ nome: nameEl.textContent.trim(), geom: { "type": "Polygon", "coordinates": [coordsArray] } });
             }
             return poligonos;
-        }
-
-        async function lerArquivoUnico(file) {
-            let kmlText = '';
-            if (file.name.endsWith('.kmz')) {
-                const zip = await JSZip.loadAsync(file);
-                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
-                kmlText = await zip.files[kmlFile].async('string');
-            } else { kmlText = await file.text(); }
-            
-            const parser = new DOMParser();
-            const kml = parser.parseFromString(kmlText, 'text/xml');
-            const coordsEl = kml.getElementsByTagName('coordinates')[0];
-            if (!coordsEl) return null;
-            const coordsText = coordsEl.textContent.trim();
-            const coordsArray = coordsText.split(/\s+/).map(coord => {
-                const [lon, lat] = coord.split(',').map(Number);
-                return [lon, lat];
-            });
-            if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) { coordsArray.push(coordsArray[0]); }
-            return { "type": "Polygon", "coordinates": [coordsArray] };
         }
 
         async function enviarManual() {
@@ -232,58 +100,20 @@
             let whatsapp = document.getElementById('manual-whatsapp').value.replace(/\D/g, '');
             if (whatsapp.length === 9) whatsapp = "17" + whatsapp;
             const file = document.getElementById('manual-arquivo').files[0];
+            if (!file || whatsapp.length < 11) return msgEl.innerText = "Dados incompletos.";
             
-            if (!file || whatsapp.length < 11) {
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.innerText = "Preencha WhatsApp e selecione o arquivo.";
-                msgEl.classList.remove('hidden');
-                return;
-            }
-
-            msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
-            msgEl.innerText = "Lendo desenho e cadastrando...";
-            msgEl.classList.remove('hidden');
-
             try {
-                let { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
-                let clienteId;
-                if (cli) { clienteId = cli.id; } 
-                else {
-                    const { data: novoCli, error: errC } = await supabaseClient.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp: whatsapp, ativo: true }).select('id').single();
-                    if(errC) throw errC; clienteId = novoCli.id;
-                }
-
-                const geom = await lerArquivoUnico(file);
-                if (!geom) throw new Error("Erro ao ler o KML/KMZ.");
-
-                const parseDate = (id) => { const v = document.getElementById(id).value; return v ? v.split(' ')[0] : null; };
-                const parseNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : 0; };
-
-                const { error: errT } = await supabaseClient.from('talhoes').insert({
-                    id: crypto.randomUUID(),
-                    cliente_id: clienteId,
-                    codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20),
-                    nome_fazenda: document.getElementById('manual-fazenda').value || 'Não Informada',
-                    codigo_bloco: document.getElementById('manual-bloco').value || '',
-                    geom: geom,
-                    variedade: document.getElementById('manual-variedade').value || 'Não Informada',
-                    tipo_plantio: document.getElementById('manual-tipo').value,
-                    numero_corte: parseInt(document.getElementById('manual-corte').value),
-                    data_plantio: parseDate('manual-data-pl'),
-                    data_ultimo_corte: parseDate('manual-data-ct'),
-                    tch_planejado: parseNum('manual-tch-pl'),
-                    tch_realizado: parseNum('manual-tch-re'),
-                    atr_planejado: 0,
-                    atr_realizado: 0
-                });
-
-                if (errT) throw errT;
+                let { data: cli } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                let clienteId = cli ? cli.id : (await sb.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp, ativo: true }).select('id').single()).data.id;
+                let kmlText = file.name.endsWith('.kmz') ? await (await JSZip.loadAsync(file)).files[Object.keys((await JSZip.loadAsync(file)).files).find(f => f.endsWith('.kml'))].async('string') : await file.text();
+                let coordsEl = new DOMParser().parseFromString(kmlText, 'text/xml').getElementsByTagName('coordinates')[0];
+                if (!coordsEl) throw new Error("KML inválido.");
+                let coordsArray = coordsEl.textContent.trim().split(/\s+/).map(c => [parseFloat(c.split(',')[0]), parseFloat(c.split(',')[1])]);
+                if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) coordsArray.push(coordsArray[0]);
+                await sb.from('talhoes').insert({ id: crypto.randomUUID(), cliente_id: clienteId, codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20), nome_fazenda: document.getElementById('manual-fazenda').value || 'N/D', codigo_bloco: document.getElementById('manual-bloco').value || '', ambiente_producao: document.getElementById('manual-ambiente').value || 'N/D', geom: { type: "Polygon", coordinates: [coordsArray] }, variedade: document.getElementById('manual-variedade').value || 'N/D', tipo_plantio: document.getElementById('manual-tipo').value, numero_corte: parseInt(document.getElementById('manual-corte').value), data_plantio: document.getElementById('manual-data-pl').value || null });
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
-                msgEl.innerHTML = `<b>SUCESSO! Talhão cadastrado.</b><br>Rode o Python nas Actions para gerar a imagem.`;
-            } catch (error) {
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.innerText = "Erro: " + error.message;
-            }
+                msgEl.innerHTML = `<b>SUCESSO!</b>`;
+            } catch (e) { msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300'; msgEl.innerText = "Erro: " + e.message; }
         }
 
         async function enviarLote() {
@@ -292,115 +122,62 @@
             if (whatsapp.length === 9) whatsapp = "17" + whatsapp;
             const excelFile = document.getElementById('lote-excel').files[0];
             const kmlFile = document.getElementById('lote-kml').files[0];
-
-            if (!excelFile || !kmlFile || whatsapp.length < 11) {
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.innerText = "Preencha o WhatsApp e selecione o Excel e o KML.";
-                msgEl.classList.remove('hidden');
-                return;
-            }
-
+            if (!excelFile || !kmlFile || whatsapp.length < 11) return msgEl.innerText = "Dados incompletos.";
+            
             msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
-            msgEl.innerText = "Lendo arquivos... Pode levar 1 minuto.";
-            msgEl.classList.remove('hidden');
+            msgEl.innerText = "Processando..."; msgEl.classList.remove('hidden');
 
             try {
-                const { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
-                let clienteId;
-                if (cli) { clienteId = cli.id; } 
-                else {
-                    const { data: novoCli, error: errC } = await supabaseClient.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp: whatsapp, ativo: true }).select('id').single();
-                    if(errC) throw errC; clienteId = novoCli.id;
-                }
+                let { data: cli } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                let clienteId = cli ? cli.id : (await sb.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp, ativo: true }).select('id').single()).data.id;
 
-                msgEl.innerText = "Extraindo polígonos do KML/KMZ...";
+                msgEl.innerText = "Apagando talhões antigos...";
+                await sb.from('talhoes').delete().eq('cliente_id', clienteId);
+
                 const poligonosKml = await lerPoligonosDeKmlUnico(kmlFile);
-
-                const excelData = await excelFile.arrayBuffer();
-                const workbook = XLSX.read(excelData);
-                const dadosExcel = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
+                const dadosExcel = XLSX.utils.sheet_to_json(XLSX.read(await excelFile.arrayBuffer()).Sheets[Object.keys(XLSX.read(await excelFile.arrayBuffer()).Sheets)[0]]);
                 let talhoesParaSalvar = [];
-                msgEl.innerText = "Cruzando dados do Excel com os desenhos...";
+
+                msgEl.innerText = "Cruzando dados...";
 
                 for (const linha of dadosExcel) {
                     const nomeTalhao = String(linha.talhao || "").trim();
                     const codigoBloco = String(linha.codigo_bloco || "").trim();
                     if (!nomeTalhao) continue;
-
                     const buscaComposta = normalizarNome(codigoBloco + "-" + nomeTalhao);
-                    const buscaTalhao = normalizarNome(nomeTalhao);
-
-                    // Procura o polígono dentro do KML que case com o Bloco-Talhão do Excel
-                    const matchPoligono = poligonosKml.find(p => {
-                        const nomeLimpo = normalizarNome(p.nome);
-                        if (codigoBloco) {
-                            return nomeLimpo.includes(buscaComposta);
-                        } else {
-                            return nomeLimpo.includes(buscaTalhao);
-                        }
-                    });
-
-                    if (!matchPoligono) { 
-                        console.warn("Desenho não encontrado no KML para o talhão: Bloco " + codigoBloco + " Talhão " + nomeTalhao);
-                        continue; 
-                    }
+                    
+                    const matchPoligono = poligonosKml.find(p => normalizarNome(p.nome).includes(buscaComposta));
+                    if (!matchPoligono) continue;
 
                     const isNullOrEmpty = (val) => (val === undefined || val === null || val === "");
                     const parseNum = (val) => isNullOrEmpty(val) ? 0 : parseFloat(val);
-                    
-                    // NOVA LÓGICA DE DATA QUE LÊ NÚMEROS DO EXCEL
                     const parseDate = (val) => {
                         if (isNullOrEmpty(val)) return null;
-                        if (typeof val === 'number') {
-                            let date = new Date(Math.round((val - 25569) * 86400 * 1000));
-                            let y = date.getUTCFullYear();
-                            let m = String(date.getUTCMonth() + 1).padStart(2, '0');
-                            let d = String(date.getUTCDate()).padStart(2, '0');
-                            return `${y}-${m}-${d}`;
-                        }
-                        let str = String(val);
-                        if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.split(' ')[0];
-                        if (str instanceof Date) {
-                            let y = str.getUTCFullYear();
-                            let m = String(str.getUTCMonth() + 1).padStart(2, '0');
-                            let d = String(str.getUTCDate()).padStart(2, '0');
-                            return `${y}-${m}-${d}`;
-                        }
-                        return str.split(' ')[0];
+                        if (typeof val === 'number') { let d = new Date(Math.round((val - 25569) * 86400 * 1000)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; }
+                        return String(val).split(' ')[0];
                     };
 
                     talhoesParaSalvar.push({
-                        id: crypto.randomUUID(),
-                        cliente_id: clienteId,
-                        codigo_talhao: nomeTalhao.substring(0, 20),
-                        nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'Não Informada' : String(linha.nome_fazenda),
+                        id: crypto.randomUUID(), cliente_id: clienteId, codigo_talhao: nomeTalhao.substring(0, 20),
+                        nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'N/D' : String(linha.nome_fazenda),
                         codigo_bloco: codigoBloco,
+                        ambiente_producao: isNullOrEmpty(linha.ambiente_producao) ? 'N/D' : String(linha.ambiente_producao),
                         geom: matchPoligono.geom,
-                        variedade: isNullOrEmpty(linha.variedade) ? 'Não Informada' : String(linha.variedade),
+                        variedade: isNullOrEmpty(linha.variedade) ? 'N/D' : String(linha.variedade),
                         tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
                         numero_corte: isNullOrEmpty(linha.numero_corte) ? 1 : parseInt(linha.numero_corte),
-                        data_plantio: parseDate(linha.data_plantio),
-                        data_ultimo_corte: parseDate(linha.data_ultimo_corte),
-                        tch_planejado: parseNum(linha.tch_planejado),
-                        tch_realizado: parseNum(linha.tch_realizado),
-                        atr_planejado: parseNum(linha.atr_planejado),
-                        atr_realizado: parseNum(linha.atr_realizado)
+                        data_plantio: parseDate(linha.data_plantio), data_ultimo_corte: parseDate(linha.data_ultimo_corte),
+                        tch_planejado: parseNum(linha.tch_planejado), tch_realizado: parseNum(linha.tch_realizado),
+                        atr_planejado: parseNum(linha.atr_planejado), atr_realizado: parseNum(linha.atr_realizado)
                     });
                 }
 
-                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum desenho do KML casou com os dados do Excel. Verifique se os nomes dos talhões no Google Earth contêm o Bloco e o Talhão (ex: 1010-10).");
-                
-                msgEl.innerText = "Salvando " + talhoesParaSalvar.length + " talhões no banco...";
-                const { error: errInsert } = await supabaseClient.from('talhoes').insert(talhoesParaSalvar);
-                if (errInsert) throw errInsert;
-
+                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum desenho casou com o Excel.");
+                msgEl.innerText = "Salvando " + talhoesParaSalvar.length + " talhões...";
+                await sb.from('talhoes').insert(talhoesParaSalvar);
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
                 msgEl.innerHTML = `<b>SUCESSO! ${talhoesParaSalvar.length} talhões cadastrados.</b>`;
-            } catch (error) {
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.innerText = "Erro: " + error.message;
-            }
+            } catch (e) { msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300'; msgEl.innerText = "Erro: " + e.message; }
         }
     </script>
 </body>
