@@ -91,7 +91,6 @@
             <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: 17997927252)" maxlength="15">
             <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
             
-            <!-- NOVO CAMPO DE SENHA -->
             <input type="password" id="campo-senha" placeholder="Sua Senha" style="margin-top: 15px;">
             
             <button onclick="fazerLogin()">Entrar</button>
@@ -106,7 +105,9 @@
     <div id="tela-app">
         <div class="header">
             <div class="header-left">
-                <img src="logo.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+                <a href="dashboard.html" style="text-decoration: none; color: white; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                    <span>←</span> <span class="header-logo-text" style="white-space: nowrap;">Painel</span>
+                </a>
             </div>
             <div class="header-titulos">
                 <h1>Agro Intelligence</h1>
@@ -168,7 +169,24 @@
         window.onload = async () => {
             window.addEventListener('resize', () => { isMobile = window.innerWidth <= 768; });
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) { const whatsapp = session.user.email.replace('@app.ndvi', ''); await validarAcessoELoadar(whatsapp); } else { mostrarTela('login'); }
+            
+            // Pega o parâmetro da URL para saber se o usuário clicou no card do mapa
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view');
+
+            if (session) {
+                const whatsapp = session.user.email.replace('@app.ndvi', '');
+                // Se tem sessão mas não clicou no mapa, manda pro painel principal
+                if (view !== 'map') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                // Se clicou no mapa, valida o acesso e carrega
+                await validarAcessoELoadar(whatsapp);
+            } else {
+                // Se não tem sessão, mostra a tela de login
+                mostrarTela('login');
+            }
         };
 
         function mostrarTela(tela) {
@@ -181,19 +199,20 @@
         async function fazerLogin() {
             const msgErro = document.getElementById('msg-erro-login');
             const whatsappFormatado = padronizarWhatsapp(document.getElementById('campo-whatsapp').value);
-            const senha = document.getElementById('campo-senha').value; // PEGA A SENHA DIGITADA
+            const senha = document.getElementById('campo-senha').value;
 
             if (whatsappFormatado.length < 11) { msgErro.innerText = "Digite um número válido (DDD + Número)."; msgErro.style.color = "red"; return; }
-            if (!senha) { msgErro.innerText = "Digite sua senha."; msgErro.style.color = "red"; return; } // VALIDA SE A SENHA NAO ESTA VAZIA
+            if (!senha) { msgErro.innerText = "Digite sua senha."; msgErro.style.color = "red"; return; }
 
             msgErro.innerText = "Verificando..."; msgErro.style.color = "#666";
             const emailFake = whatsappFormatado + "@app.ndvi"; 
 
             try {
-                // USA A SENHA REAL DIGITADA PELO USUARIO
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailFake, password: senha });
                 if (error) throw error;
-                await validarAcessoELoadar(whatsappFormatado);
+                
+                // SUCESSO NO LOGIN -> REDIRECIONA PARA O PAINEL (DASHBOARD)
+                window.location.href = 'dashboard.html';
             } catch (error) {
                 msgErro.style.color = "red";
                 msgErro.innerText = error.message.includes("Invalid login") ? "Número ou senha incorretos." : "Erro: " + error.message;
@@ -205,6 +224,7 @@
             const { data: cliente, error: dbError } = await supabaseClient.from('clientes').select('id, ativo').eq('whatsapp', whatsapp).single();
             if (dbError || !cliente) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.style.color = "red"; msgErro.innerText = "Usuário não encontrado na base de dados."; return; }
             if (cliente.ativo === false) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.style.color = "red"; msgErro.innerText = "⚠️ ACESSO BLOQUEADO. Plano expirado. Contate o suporte."; return; }
+            
             clienteId = cliente.id; msgErro.innerText = ""; mostrarTela('app'); buscarTalhoes();
         }
 
@@ -382,7 +402,7 @@
             }
         }
 
-        async function deslogar() { await supabaseClient.auth.signOut(); clienteId = null; dadosTalhoes = []; mostrarTela('login'); }
+        async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
