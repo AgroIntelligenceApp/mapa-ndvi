@@ -37,29 +37,10 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">🚜 TCH</h3>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div><p class="text-sm text-gray-500">Planejado</p><p id="tch-plan" class="text-2xl font-bold text-gray-800">0</p></div>
-                        <div><p class="text-sm text-gray-500">Realizado</p><p id="tch-real" class="text-2xl font-bold text-blue-600">0</p></div>
-                        <div><p class="text-sm text-gray-500">Diferença</p><p id="tch-diff" class="text-2xl font-bold text-red-600">0%</p></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">💧 ATR</h3>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div><p class="text-sm text-gray-500">Planejado</p><p id="atr-plan" class="text-2xl font-bold text-gray-800">0</p></div>
-                        <div><p class="text-sm text-gray-500">Realizado</p><p id="atr-real" class="text-2xl font-bold text-green-600">0</p></div>
-                        <div><p class="text-sm text-gray-500">Diferença</p><p id="atr-diff" class="text-2xl font-bold text-red-600">0%</p></div>
-                    </div>
-                </div>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-md font-bold text-gray-700 mb-4">Por Bloco</h3>
-                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Bloco</th><th class="py-2 text-xs text-right">Área</th></tr></thead><tbody id="tabela-blocos" class="divide-y"></tbody></table>
+                    <h3 class="text-md font-bold text-gray-700 mb-4">Indicador de Maturação</h3>
+                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Tipo</th><th class="py-2 text-xs text-right">Área</th></tr></thead><tbody id="tabela-maturacao" class="divide-y"></tbody></table>
                 </div>
                 <div class="bg-white rounded-xl shadow-lg p-6 border">
                     <h3 class="text-md font-bold text-gray-700 mb-4">Ambientes</h3>
@@ -80,7 +61,6 @@
     <script>
         const sb = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
 
-        // Formata para Padrão Brasileiro (ex: 9.280,20)
         function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 
         function calcArea(geojson) {
@@ -101,12 +81,11 @@
             const { data: cliente } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).single();
             if (!cliente) return;
 
-            const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, nome_fazenda, codigo_bloco, ambiente_producao, tch_planejado, tch_realizado, atr_planejado, atr_realizado, data_plantio, data_ultimo_corte').eq('cliente_id', cliente.id);
+            const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cliente.id);
 
             if (talhoes) {
                 let totalGeral = 0, totalPlantio = 0, totalSoca = 0;
-                let blocos = {}, ambientes = {}, variedades = {}, cortes = {};
-                let sTCH = 0, vTCHp = 0, vTCHr = 0, sATR = 0, vATRp = 0, vATRr = 0;
+                let maturacoes = {}, ambientes = {}, variedades = {}, cortes = {};
 
                 talhoes.forEach(t => {
                     let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
@@ -114,31 +93,18 @@
                     totalGeral += area;
                     if (t.tipo_plantio === 'Plantio') totalPlantio += area; else totalSoca += area;
 
-                    let bKey = `${t.nome_fazenda || 'N/D'} - ${t.codigo_bloco || 'N/D'}`; if (!blocos[bKey]) blocos[bKey] = 0; blocos[bKey] += area;
+                    let mKey = t.maturacao || 'N/D'; if (!maturacoes[mKey]) maturacoes[mKey] = 0; maturacoes[mKey] += area;
                     let aKey = t.ambiente_producao || 'N/D'; if (!ambientes[aKey]) ambientes[aKey] = 0; ambientes[aKey] += area;
                     let vKey = t.variedade || 'N/D'; if (!variedades[vKey]) variedades[vKey] = 0; variedades[vKey] += area;
                     let cKey = `${t.numero_corte || 1}º Corte`; if (!cortes[cKey]) cortes[cKey] = { area: 0, idadeSoma: 0, count: 0 }; cortes[cKey].area += area;
                     let idade = calcIdade(t.tipo_plantio === 'Plantio' ? t.data_plantio : t.data_ultimo_corte); if (idade !== "N/D") { cortes[cKey].idadeSoma += parseInt(idade); cortes[cKey].count++; }
-
-                    if (t.tch_planejado > 0) { vTCHp += (t.tch_planejado * area); sTCH += area; }
-                    if (t.tch_realizado > 0) vTCHr += (t.tch_realizado * area);
-                    if (t.atr_planejado > 0) { vATRp += (t.atr_planejado * area); sATR += area; }
-                    if (t.atr_realizado > 0) vATRr += (t.atr_realizado * area);
                 });
 
                 document.getElementById('total-geral').innerText = formatBR(totalGeral) + " ha";
                 document.getElementById('total-plantio').innerText = formatBR(totalPlantio) + " ha";
                 document.getElementById('total-soca').innerText = formatBR(totalSoca) + " ha";
 
-                let mTCHp = sTCH > 0 ? vTCHp / sTCH : 0; let mTCHr = sTCH > 0 ? vTCHr / sTCH : 0; let dTCH = mTCHp > 0 ? ((mTCHr - mTCHp) / mTCHp) * 100 : 0;
-                document.getElementById('tch-plan').innerText = formatBR(mTCHp, 1); document.getElementById('tch-real').innerText = formatBR(mTCHr, 1);
-                let elTCH = document.getElementById('tch-diff'); elTCH.innerText = formatBR(dTCH, 1) + "%"; elTCH.className = "text-2xl font-bold " + (dTCH >= 0 ? "text-green-600" : "text-red-600");
-
-                let mATRp = sATR > 0 ? vATRp / sATR : 0; let mATRr = sATR > 0 ? vATRr / sATR : 0; let dATR = mATRp > 0 ? ((mATRr - mATRp) / mATRp) * 100 : 0;
-                document.getElementById('atr-plan').innerText = formatBR(mATRp, 1); document.getElementById('atr-real').innerText = formatBR(mATRr, 1);
-                let elATR = document.getElementById('atr-diff'); elATR.innerText = formatBR(dATR, 1) + "%"; elATR.className = "text-2xl font-bold " + (dATR >= 0 ? "text-green-600" : "text-red-600");
-
-                let html = ''; for (let k in blocos) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(blocos[k])}</td></tr>`; document.getElementById('tabela-blocos').innerHTML = html;
+                let html = ''; for (let k in maturacoes) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(maturacoes[k])}</td></tr>`; document.getElementById('tabela-maturacao').innerHTML = html;
                 html = ''; for (let k in ambientes) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(ambientes[k])}</td></tr>`; document.getElementById('tabela-ambientes').innerHTML = html;
                 html = ''; for (let k in variedades) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(variedades[k])}</td></tr>`; document.getElementById('tabela-variedades').innerHTML = html;
                 html = ''; for (let k in cortes) { let o = cortes[k]; let id = o.count > 0 ? Math.round(o.idadeSoma / o.count) + "m" : "N/D"; html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`; } document.getElementById('tabela-cortes').innerHTML = html;
