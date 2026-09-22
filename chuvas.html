@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro Intelligence | Dados de Chuva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Biblioteca de Gráficos nativa -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    
+    <!-- Header -->
+    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-10">
+        <a href="dashboard.html" style="text-decoration: none; color: white; font-size: 14px; font-weight: bold;">
+            ← Painel
+        </a>
+        <div class="flex items-center gap-2">
+            <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+            <div class="text-right">
+                <h1 class="text-lg font-bold">Agro Intelligence</h1>
+                <p class="text-xs opacity-80">Dados de Chuva</p>
+            </div>
+        </div>
+        <div style="width: 50px;"></div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-8 flex flex-col items-center w-full max-w-4xl mx-auto">
+        
+        <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📊 Histórico de Precipitação</h2>
+            <p class="text-gray-500 text-sm mb-4">Selecione um talhão para ver os dados de chuva (mm) do local nos últimos 30 dias e a previsão para os próximos dias.</p>
+            
+            <div class="flex flex-col gap-4">
+                <select id="select-talhao" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="">Carregando talhões...</option>
+                </select>
+                
+                <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50"></div>
+            </div>
+        </div>
+
+        <div class="w-full bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <canvas id="graficoChuva" width="400" height="200"></canvas>
+        </div>
+
+    </main>
+
+    <script>
+        const supabaseUrl = 'https://keiydgyountsuzjybsng.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let dadosTalhoes = [];
+        let clienteId = null;
+        let grafico = null;
+
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            const whatsapp = session.user.email.replace('@app.ndvi', '');
+            const { data: cliente } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).single();
+            
+            if (cliente) {
+                clienteId = cliente.id;
+                await buscarTalhoes();
+            }
+        };
+
+        async function buscarTalhoes() {
+            const { data, error } = await supabaseClient
+                .from('talhoes')
+                .select('id, codigo_talhao, geom')
+                .eq('cliente_id', clienteId);
+
+            if (!error && data) {
+                dadosTalhoes = data;
+                const select = document.getElementById('select-talhao');
+                select.innerHTML = '<option value="">-- Selecione um Talhão --</option>';
+                data.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.codigo_talhao;
+                    select.appendChild(opt);
+                });
+            }
+        }
+
+        // Quando o usuário seleciona um talhão
+        document.getElementById('select-talhao').addEventListener('change', async function(e) {
+            const talhaoId = e.target.value;
+            if (!talhaoId) return;
+
+            const talhao = dadosTalhoes.find(t => t.id === talhaoId);
+            if (!talhao || !talhao.geom) return;
+
+            const status = document.getElementById('status-chuva');
+            status.classList.remove('hidden');
+            status.innerText = 'Buscando dados meteorológicos na nuvem... Aguarde.';
+
+            try {
+                const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
+                
+                // Calcula o centro do polígono (média das coordenadas)
+                const coords = geojson.coordinates[0];
+                let sumLat = 0, sumLon = 0;
+                coords.forEach(c => { sumLon += c[0]; sumLat += c[1]; });
+                const lat = sumLat / coords.length;
+                const lon = sumLon / coords.length;
+
+                // Chama a API Open-Meteo (Gratuita, não precisa de chave)
+                // Busca os últimos 30 dias (past_days=30) de chuva
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=30&daily=precipitation_sum&timezone=America/Sao_Paulo`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data && data.daily && data.daily.time) {
+                    desenharGrafico(data.daily.time, data.daily.precipitation_sum);
+                    status.classList.add('hidden');
+                } else {
+                    status.innerText = 'Não foi possível obter dados de chuva para este local.';
+                }
+            } catch (error) {
+                status.innerText = 'Erro ao buscar dados: ' + error.message;
+            }
+        });
+
+        function desenharGrafico(labels, dados) {
+            const ctx = document.getElementById('graficoChuva').getContext('2d');
+            
+            // Se já existe um gráfico, destroi para desenhar o novo
+            if (grafico) {
+                grafico.destroy();
+            }
+
+            grafico = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels, // Datas
+                    datasets: [{
+                        label: 'Precipitação (mm)',
+                        data: dados, // Valores em mm
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Chuva: ${context.raw.toFixed(1)} mm`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Milímetros (mm)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Data' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
