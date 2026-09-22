@@ -9,7 +9,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <!-- Header -->
     <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-10">
         <div class="flex items-center gap-3">
             <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
@@ -21,26 +20,29 @@
         <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm">Sair</button>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 p-6 flex flex-col items-center">
         <div class="text-center mb-10">
             <h2 class="text-2xl font-bold text-gray-800">Bem-vindo!</h2>
             <p id="nome-cliente" class="text-gray-600 font-medium">Carregando...</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
-            <!-- Card 1: Mapa NDVI -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
             <a href="index.html?view=map" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
                 <div class="text-5xl mb-4">🛰️</div>
                 <h3 class="text-xl font-bold text-gray-800">Mapa NDVI</h3>
-                <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade dos seus talhões.</p>
+                <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade.</p>
             </a>
 
-            <!-- Card 2: Dados de Chuva (LIBERADO) -->
             <a href="chuvas.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
                 <div class="text-5xl mb-4">🌧️</div>
                 <h3 class="text-xl font-bold text-gray-800">Dados de Chuva</h3>
-                <p class="text-gray-500 text-sm text-center mt-2">Relatórios climáticos e estimativa de volume de chuva.</p>
+                <p class="text-gray-500 text-sm text-center mt-2">Histórico e previsão pluviométrica.</p>
+            </a>
+
+            <a href="kpi.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+                <div class="text-5xl mb-4">📊</div>
+                <h3 class="text-xl font-bold text-gray-800">Indicadores (KPI)</h3>
+                <p class="text-gray-500 text-sm text-center mt-2">Áreas por estágio, corte e variedade.</p>
             </a>
         </div>
     </main>
@@ -52,25 +54,13 @@
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
-            
+            if (!session) { window.location.href = 'index.html'; return; }
             const whatsapp = session.user.email.replace('@app.ndvi', '');
             const { data: cliente } = await supabaseClient.from('clientes').select('nome').eq('whatsapp', whatsapp).single();
-            
-            if (cliente) {
-                document.getElementById('nome-cliente').innerText = cliente.nome;
-            } else {
-                document.getElementById('nome-cliente').innerText = "Cliente";
-            }
+            if (cliente) { document.getElementById('nome-cliente').innerText = cliente.nome; }
         };
 
-        async function deslogar() {
-            await supabaseClient.auth.signOut();
-            window.location.href = 'index.html';
-        }
+        async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
