@@ -25,7 +25,6 @@
             <button id="tab-lote-btn" onclick="switchTab('lote')" class="tab-inactive flex-1 py-2 rounded-md font-bold transition">Em Lote (Excel)</button>
         </div>
 
-        <!-- MANUAL -->
         <div id="form-manual" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <input type="tel" id="manual-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="WhatsApp">
@@ -39,8 +38,11 @@
                 <input type="text" id="manual-variedade" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Variedade">
                 <input type="text" id="manual-ambiente" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Ambiente">
             </div>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" id="manual-maturacao" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="Maturação">
                 <select id="manual-tipo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"><option>Plantio</option><option>Soca</option></select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
                 <select id="manual-corte" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white"><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option></select>
                 <input type="date" id="manual-data-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
             </div>
@@ -49,7 +51,6 @@
             <button type="button" onclick="enviarManual()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg">Cadastrar</button>
         </div>
 
-        <!-- LOTE -->
         <div id="form-lote" class="space-y-4 hidden">
             <button onclick="baixarModelo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">📥 Baixar Modelo de Excel</button>
             <input type="tel" id="lote-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="WhatsApp do Cliente">
@@ -72,8 +73,8 @@
 
         function baixarModelo() {
             const dados = [
-                { talhao: "10", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A1", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
-                { talhao: "11", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A2", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
+                { talhao: "10", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A1", maturacao: "Precoce", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
+                { talhao: "11", nome_fazenda: "São Jorge", codigo_bloco: "1010", ambiente_producao: "A2", maturacao: "Tardia", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
             ];
             const ws = XLSX.utils.json_to_sheet(dados);
             XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), ws, "Talhões")), "Modelo.xlsx");
@@ -110,7 +111,7 @@
                 if (!coordsEl) throw new Error("KML inválido.");
                 let coordsArray = coordsEl.textContent.trim().split(/\s+/).map(c => [parseFloat(c.split(',')[0]), parseFloat(c.split(',')[1])]);
                 if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) coordsArray.push(coordsArray[0]);
-                await sb.from('talhoes').insert({ id: crypto.randomUUID(), cliente_id: clienteId, codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20), nome_fazenda: document.getElementById('manual-fazenda').value || 'N/D', codigo_bloco: document.getElementById('manual-bloco').value || '', ambiente_producao: document.getElementById('manual-ambiente').value || 'N/D', geom: { type: "Polygon", coordinates: [coordsArray] }, variedade: document.getElementById('manual-variedade').value || 'N/D', tipo_plantio: document.getElementById('manual-tipo').value, numero_corte: parseInt(document.getElementById('manual-corte').value), data_plantio: document.getElementById('manual-data-pl').value || null });
+                await sb.from('talhoes').insert({ id: crypto.randomUUID(), cliente_id: clienteId, codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20), nome_fazenda: document.getElementById('manual-fazenda').value || 'N/D', codigo_bloco: document.getElementById('manual-bloco').value || '', ambiente_producao: document.getElementById('manual-ambiente').value || 'N/D', maturacao: document.getElementById('manual-maturacao').value || 'N/D', geom: { type: "Polygon", coordinates: [coordsArray] }, variedade: document.getElementById('manual-variedade').value || 'N/D', tipo_plantio: document.getElementById('manual-tipo').value, numero_corte: parseInt(document.getElementById('manual-corte').value), data_plantio: document.getElementById('manual-data-pl').value || null });
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
                 msgEl.innerHTML = `<b>SUCESSO!</b>`;
             } catch (e) { msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300'; msgEl.innerText = "Erro: " + e.message; }
@@ -135,7 +136,8 @@
                 await sb.from('talhoes').delete().eq('cliente_id', clienteId);
 
                 const poligonosKml = await lerPoligonosDeKmlUnico(kmlFile);
-                const dadosExcel = XLSX.utils.sheet_to_json(XLSX.read(await excelFile.arrayBuffer()).Sheets[Object.keys(XLSX.read(await excelFile.arrayBuffer()).Sheets)[0]]);
+                const wb = XLSX.read(await excelFile.arrayBuffer());
+                const dadosExcel = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
                 let talhoesParaSalvar = [];
 
                 msgEl.innerText = "Cruzando dados...";
@@ -162,6 +164,7 @@
                         nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'N/D' : String(linha.nome_fazenda),
                         codigo_bloco: codigoBloco,
                         ambiente_producao: isNullOrEmpty(linha.ambiente_producao) ? 'N/D' : String(linha.ambiente_producao),
+                        maturacao: isNullOrEmpty(linha.maturacao) ? 'N/D' : String(linha.maturacao),
                         geom: matchPoligono.geom,
                         variedade: isNullOrEmpty(linha.variedade) ? 'N/D' : String(linha.variedade),
                         tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
