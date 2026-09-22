@@ -24,8 +24,9 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp</label>
+                <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp (ID do Cliente)</label>
                 <input type="tel" id="whatsapp" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="(XX) XXXXX-XXXX">
+                <p class="text-gray-500 text-xs mt-1">O cliente fará login com este número no site.</p>
             </div>
 
             <div>
@@ -86,6 +87,7 @@
                     return [lon, lat];
                 });
 
+                // Fecha o polígono se não estiver fechado
                 if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) {
                     coordsArray.push(coordsArray[0]);
                 }
@@ -121,35 +123,51 @@
             msgEl.classList.add('hidden');
 
             const nome = document.getElementById('nome').value;
-            const whatsapp = document.getElementById('whatsapp').value;
+            let whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, ''); // Remove parênteses e traços
+            if (whatsapp.length === 9) whatsapp = "17" + whatsapp; // Adiciona DDD se mandar só 9 dígitos
 
             try {
-                // 1. Cadastrar Cliente
-                const resCliente = await supabase.from('clientes').insert({ nome: nome, whatsapp: whatsapp }).select('id').single();
-                if(resCliente.error) throw new Error("Erro ao salvar cliente: " + resCliente.error.message);
-                const clienteId = resCliente.data.id;
+                // 1. Verifica se o cliente JÁ EXISTE pelo WhatsApp
+                let { data: clienteExistente, error: errBusca } = await supabase
+                    .from('clientes')
+                    .select('id')
+                    .eq('whatsapp', whatsapp)
+                    .maybeSingle();
 
-                // 2. Cadastrar Talhão
+                let clienteId;
+
+                if (clienteExistente) {
+                    // Se o cliente já existe, pegamos o ID dele
+                    clienteId = clienteExistente.id;
+                } else {
+                    // Se não existe, criamos um novo cliente
+                    const { data: novoCliente, error: errInsertCliente } = await supabase
+                        .from('clientes')
+                        .insert({ nome: nome, whatsapp: whatsapp, ativo: true })
+                        .select('id')
+                        .single();
+                        
+                    if(errInsertCliente) throw new Error("Erro ao salvar cliente: " + errInsertCliente.message);
+                    clienteId = novoCliente.id;
+                }
+
+                // 2. Cadastra o Talhão vinculado a esse clienteId
                 const idTalhao = crypto.randomUUID();
-                const resTalhao = await supabase.from('talhoes').insert({
+                const { error: errTalhao } = await supabase.from('talhoes').insert({
                     id: idTalhao,
                     codigo_talhao: nome.substring(0, 20),
                     geom: geomExtraida,
                     cliente_id: clienteId
-                }).select();
+                });
 
-                if(resTalhao.error) throw new Error("Erro ao salvar talhão: " + resTalhao.error.message);
+                if(errTalhao) throw new Error("Erro ao salvar talhão: " + errTalhao.message);
 
                 // 3. Sucesso!
                 msgEl.classList.remove('hidden');
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
                 msgEl.innerHTML = `
-                    <b>SUCESSO! Cadastro salvo no banco.</b><br><br>
-                    Agora rode o <b>Python em lote</b> no computador para gerar a imagem de satélite.<br><br>
-                    <b>Link do Mapa:</b><br>
-                    <a href="https://marcelodasilvanery.github.io/mapa-ndvi/?v=10&id=${idTalhao}" target="_blank" class="underline text-green-400 break-all text-xs">
-                        Clique aqui para ver o Mapa
-                    </a>
+                    <b>SUCESSO! Talhão salvo e vinculado ao cliente ${nome}.</b><br><br>
+                    O mapa não vai aparecer imediatamente. Ele só ficará visível para o cliente após o Python rodar na nuvem (GitHub Actions) e gerar a imagem de satélite.
                 `;
                 btn.textContent = 'Cadastro Concluído';
 
