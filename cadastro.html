@@ -299,9 +299,9 @@
                         const baseName = nome.split('/').pop().replace(/\.(kml|kmz)$/, '');
                         const baseLimpa = normalizarNome(baseName); // ex: "1010-10"
                         
-                        // Se tiver bloco, usa a busca composta, senão usa só o talhao
+                        // Se tiver bloco, verifica se o nome do arquivo CONTEM a junção do bloco com o traço
                         if (codigoBloco) {
-                            return baseLimpa === buscaComposta;
+                            return baseLimpa.includes(buscaComposta);
                         } else {
                             return baseLimpa.includes(buscaTalhao);
                         }
