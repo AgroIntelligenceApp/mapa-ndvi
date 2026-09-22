@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- Biblioteca para ler e gerar Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         .tab-active { background-color: #1a472a; color: white; }
@@ -39,7 +38,18 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-1">Nome do Talhão</label>
-                    <input type="text" id="manual-nome" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: Talhao_01">
+                    <input type="text" id="manual-nome" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: 10">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Fazenda</label>
+                    <input type="text" id="manual-fazenda" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: São Jorge">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Código do Bloco</label>
+                    <input type="text" id="manual-bloco" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: 1010">
                 </div>
             </div>
 
@@ -139,8 +149,8 @@
 
         function baixarModelo() {
             const dados = [
-                { talhao: "Talhao_01", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
-                { talhao: "Talhao_02", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
+                { talhao: "10", nome_fazenda: "São Jorge", codigo_bloco: "1010", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
+                { talhao: "11", nome_fazenda: "São Jorge", codigo_bloco: "1010", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
             ];
             const ws = XLSX.utils.json_to_sheet(dados);
             const wb = XLSX.utils.book_new();
@@ -208,6 +218,8 @@
                     id: crypto.randomUUID(),
                     cliente_id: clienteId,
                     codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20),
+                    nome_fazenda: document.getElementById('manual-fazenda').value || 'Não Informada',
+                    codigo_bloco: document.getElementById('manual-bloco').value || '',
                     geom: geom,
                     variedade: document.getElementById('manual-variedade').value || 'Não Informada',
                     tipo_plantio: document.getElementById('manual-tipo').value,
@@ -216,7 +228,7 @@
                     data_ultimo_corte: parseDate('manual-data-ct'),
                     tch_planejado: parseNum('manual-tch-pl'),
                     tch_realizado: parseNum('manual-tch-re'),
-                    atr_planejado: 0, // Pode adicionar inputs depois se quiser
+                    atr_planejado: 0,
                     atr_realizado: 0
                 });
 
@@ -292,6 +304,8 @@
                         id: crypto.randomUUID(),
                         cliente_id: clienteId,
                         codigo_talhao: nomeTalhao.substring(0, 20),
+                        nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'Não Informada' : String(linha.nome_fazenda),
+                        codigo_bloco: isNullOrEmpty(linha.codigo_bloco) ? '' : String(linha.codigo_bloco),
                         geom: geom,
                         variedade: isNullOrEmpty(linha.variedade) ? 'Não Informada' : String(linha.variedade),
                         tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
