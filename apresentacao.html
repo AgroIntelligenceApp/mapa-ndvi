@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro Intelligence - Pitch Comercial</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        
+        /* Configuração para PDF - Tamanho A4 */
+        @page { size: A4 portrait; margin: 0; }
+        
+        body { background: #f4f4f4; color: #333; }
+        
+        .slide {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            background: white;
+            margin: 0 auto 10mm auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            page-break-after: always;
+            position: relative;
+        }
+
+        .header-logo { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #1a472a; padding-bottom: 15px; margin-bottom: 25px; }
+        .header-logo img { height: 50px; }
+        .header-logo h1 { color: #1a472a; font-size: 28px; text-transform: uppercase; }
+        .header-logo p { color: #666; font-size: 14px; }
+
+        h2 { color: #1a472a; font-size: 24px; margin-bottom: 15px; }
+        p { font-size: 16px; line-height: 1.5; margin-bottom: 15px; color: #444; }
+
+        .destaque { background: #1a472a; color: white; padding: 40px 20px; border-radius: 10px; text-align: center; margin: auto 0; }
+        .destaque h2 { color: white; font-size: 32px; margin-bottom: 10px; }
+        .destaque p { color: #ddd; font-size: 18px; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: #fafafa; }
+        .card h3 { color: #1a472a; margin-bottom: 10px; font-size: 18px; }
+        .card ul { list-style: none; }
+        .card ul li { position: relative; padding-left: 20px; margin-bottom: 8px; font-size: 14px; color: #555; }
+        .card ul li::before { content: "✔"; position: absolute; left: 0; color: #2d8659; font-weight: bold; }
+
+        .print-area { border: 2px dashed #aaa; background: #f0f0f0; min-height: 150px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 14px; text-align: center; border-radius: 8px; margin-top: 10px; }
+
+        .footer { position: absolute; bottom: 20mm; left: 20mm; right: 20mm; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+
+        @media print {
+            body { background: white; }
+            .slide { margin: 0; box-shadow: none; border: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: CAPA -->
+    <div class="slide">
+        <div class="destaque" style="height: 100%; justify-content: center;">
+            <h1 style="font-size: 48px; margin-bottom: 10px;">AGRO INTELLIGENCE</h1>
+            <p style="font-size: 22px; color: #fff;">Agricultura de Precisão de Alta Performance</p>
+            <br>
+            <p style="font-size: 18px;">O canavial na palma da sua mão.</p>
+            <br><br>
+            <p style="font-size: 14px; color: #bbb;">Apresentação Comercial • 2024</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: O PROBLEMA E A SOLUÇÃO -->
+    <div class="slide">
+        <div class="header-logo">
+            <div>
+                <h1>Agro Intelligence</h1>
+                <p>O Desafio da Gestão</p>
+            </div>
+        </div>
+        <h2>Por que a precisão importa?</h2>
+        <p>No agronegócio atual, decisões baseadas em "estimativas visuais" custam caro. Saber exatamente o volume de biomassa, a idade da cana e a área de cada estágio de corte define o sucesso da sua safra.</p>
+        
+        <div class="grid-2">
+            <div class="card">
+                <h3>O Método Tradicional</h3>
+                <ul>
+                    <li>Consultores em campo a todo momento</li>
+                    <li>Planilhas de Excel desatualizadas</li>
+                    <li>Dúvidas sobre a produtividade real (TCH/ATR)</li>
+                    <li>Decisões de colheita no "achismo"</li>
+                </ul>
+            </div>
+            <div class="card" style="background: #e8f5e9; border-color: #2d8659;">
+                <h3>Com o Agro Intelligence</h3>
+                <ul>
+                    <li>Painel web acessível 24/7 no celular ou PC</li>
+                    <li>Leitura de satélite a cada 5 dias (Sentinel-2)</li>
+                    <li>Cálculo automático de Área, Idade e Biomassa</li>
+                    <li>Previsão de colheita baseada em dados reais</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">Agro Intelligence • Contato: [Seu WhatsApp]</div>
+    </div>
+
+    <!-- SLIDE 3: MAPA NDVI -->
+    <div class="slide">
+        <div class="header-logo">
+            <div>
+                <h1>Agro Intelligence</h1>
+                <p>Ferramenta 1: Mapa NDVI</p>
+            </div>
+        </div>
+        <h2>Visão Satélite e Análise de Biomassa</h2>
+        <p>Atualização automática a cada 5 dias. O sistema lê os pixels da imagem e calcula a porcentagem de vigor da planta, estimando a produtividade (TCH ou Sacas) por talhão.</p>
+        
+        <div class="print-area">
+            [INSERIR PRINT DA TELA DO MAPA NDVI COM AS CORES E O PAINEL DE BIOMASSA ABERTO]
+        </div>
+        <p style="font-size: 12px; text-align: center; color: #888; margin-top: 5px;">Legenda automática de cores: Solo exposto, vegetação baixa, média, boa e densa.</p>
+        
+        <div class="footer">Agro Intelligence • Contato: [Seu WhatsApp]</div>
+    </div>
+
+    <!-- SLIDE 4: KPI -->
+    <div class="slide">
+        <div class="header-logo">
+            <div>
+                <h1>Agro Intelligence</h1>
+                <p>Ferramenta 2: Indicadores (KPI)</p>
+            </div>
+        </div>
+        <h2>O Pulso da Fazenda em Tempo Real</h2>
+        <p>Agrupamento de todos os dados de manejo cruzados com a área geográfica do talhão.</p>
+        
+        <div class="print-area" style="min-height: 300px;">
+            [INSERIR PRINT DA TELA DE KPI COM AS TABELAS DE MATURAÇÃO, AMBIENTES, VARIEDADES E IDADE]
+        </div>
+
+        <div class="grid-2" style="margin-top: 20px;">
+            <div class="card">
+                <h3>O que o gestor vê:</h3>
+                <ul>
+                    <li>Área total por Bloco e Fazenda</li>
+                    <li>Idade da cana calculada em meses</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>Decisão estratégica:</h3>
+                <ul>
+                    <li>Saber quantos hectares estão prontos para o corte</li>
+                    <li>Planejar a entrada de máquinas</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">Agro Intelligence • Contato: [Seu WhatsApp]</div>
+    </div>
+
+    <!-- SLIDE 5: CLIMA -->
+    <div class="slide">
+        <div class="header-logo">
+            <div>
+                <h1>Agro Intelligence</h1>
+                <p>Ferramenta 3: Dados Pluviométricos</p>
+            </div>
+        </div>
+        <h2>Previsão e Histórico de Chuvas</h2>
+        <p>O produtor seleciona o município e o sistema busca na nuvem os dados de precipitação dos últimos 15 dias, 3 meses, 12 meses e a previsão para os próximos 15 dias.</p>
+        
+        <div class="print-area">
+            [INSERIR PRINT DA TELA DE CHUVAS COM OS GRÁFICOS DE BARRAS]
+        </div>
+        <p style="font-size: 14px; margin-top: 15px;">Com isso, o gestor consegue prever o ponto de maturação da cana baseado no volume de água recebido, otimizando o agendamento da colheita.</p>
+        <div class="footer">Agro Intelligence • Contato: [Seu WhatsApp]</div>
+    </div>
+
+    <!-- SLIDE 6: CALL TO ACTION (CTA) -->
+    <div class="slide">
+        <div class="destaque" style="height: 100%; justify-content: center; text-align: center;">
+            <h1 style="font-size: 40px;">Vamos otimizar a sua safra?</h1>
+            <br>
+            <p style="font-size: 20px;">Oferecemos um Piloto Comercial de 60 dias.</p>
+            <p style="font-size: 18px; color: #bbb; margin-top: 10px;">Cadastramos 3 talhões da sua fazenda no sistema. Você acompanha as imagens de satélite e relatórios. Se agregar valor à sua gestão de colheita, formalizamos o contrato anual.</p>
+            <br><br>
+            <div style="background: white; padding: 20px; border-radius: 10px; color: #1a472a; display: inline-block;">
+                <h2 style="margin: 0; font-size: 24px;">Agende uma demonstração</h2>
+                <p style="margin: 10px 0 0 0; color: #666;">Marcelo - Diretor Comercial</p>
+                <p style="margin: 0; color: #666;">WhatsApp: (17) 99792-7252</p>
+                <p style="margin: 0; color: #666;">app.agrointelligence.com.br (exemplo)</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
