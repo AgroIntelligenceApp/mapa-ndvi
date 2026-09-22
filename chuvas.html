@@ -20,30 +20,60 @@
             <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
             <div class="text-right">
                 <h1 class="text-lg font-bold">Agro Intelligence</h1>
-                <p class="text-xs opacity-80">Dados de Chuva</p>
+                <p class="text-xs opacity-80">Dados Pluviométricos</p>
             </div>
         </div>
         <div style="width: 50px;"></div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 p-4 md:p-8 flex flex-col items-center w-full max-w-4xl mx-auto">
+    <main class="flex-1 p-4 md:p-8 flex flex-col items-center w-full max-w-5xl mx-auto">
         
+        <!-- Card de Seleção -->
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">📊 Histórico de Precipitação</h2>
-            <p class="text-gray-500 text-sm mb-4">Selecione um talhão para ver os dados de chuva (mm) do local nos últimos 30 dias e a previsão para os próximos dias.</p>
-            
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico de Chuvas</h2>
             <div class="flex flex-col gap-4">
-                <select id="select-talhao" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
-                    <option value="">Carregando talhões...</option>
+                <select id="select-cidade" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="">-- Selecione o Município --</option>
+                    <!-- Adicione mais cidades aqui no formato: {"nome": "Cidade - UF", "lat": -20.42, "lon": -49.97} -->
+                    <option value='{"lat": -20.4226, "lon": -49.9725}'>Votuporanga - SP</option>
+                    <option value='{"lat": -21.0419, "lon": -49.7636}'>Tanabi - SP</option>
+                    <option value='{"lat": -20.7889, "lon": -49.4031}'>São José do Rio Preto - SP</option>
+                    <option value='{"lat": -20.6219, "lon": -49.0658}'>Mirassol - SP</option>
+                    <option value='{"lat": -19.9333, "lon": -50.4878}'>Fernandópolis - SP</option>
                 </select>
                 
-                <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50"></div>
+                <button onclick="buscarDados()" class="bg-[#1a472a] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2d8659] transition duration-200">
+                    Buscar Dados
+                </button>
             </div>
         </div>
 
-        <div class="w-full bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <canvas id="graficoChuva" width="400" height="200"></canvas>
+        <!-- Card Total Acumulado -->
+        <div id="card-total" class="w-full bg-[#1a472a] text-white rounded-xl shadow-lg p-6 mb-6 hidden">
+            <div class="text-center">
+                <p class="text-sm uppercase tracking-wider opacity-80">Volume Acumulado (Últimos 12 Meses)</p>
+                <p id="total-acumulado" class="text-4xl font-bold my-2">0 mm</p>
+            </div>
+        </div>
+
+        <!-- Status de Carregamento -->
+        <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50 mb-6">Processando...</div>
+
+        <!-- Gráficos -->
+        <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">15 Dias (Detalhado)</h3>
+            <canvas id="grafico15dias" height="100"></canvas>
+        </div>
+
+        <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">Últimos 3 Meses</h3>
+            <canvas id="grafico3meses" height="100"></canvas>
+        </div>
+
+        <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-700 mb-4">Últimos 12 Meses (Tendência)</h3>
+            <canvas id="grafico12meses" height="100"></canvas>
         </div>
 
     </main>
@@ -53,9 +83,9 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let dadosTalhoes = [];
-        let clienteId = null;
-        let grafico = null;
+        let grafico15 = null;
+        let grafico3 = null;
+        let grafico12 = null;
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -63,99 +93,109 @@
                 window.location.href = 'index.html';
                 return;
             }
-            
-            const whatsapp = session.user.email.replace('@app.ndvi', '');
-            const { data: cliente } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).single();
-            
-            if (cliente) {
-                clienteId = cliente.id;
-                await buscarTalhoes();
-            }
         };
 
-        async function buscarTalhoes() {
-            const { data, error } = await supabaseClient
-                .from('talhoes')
-                .select('id, codigo_talhao, geom')
-                .eq('cliente_id', clienteId);
-
-            if (!error && data) {
-                dadosTalhoes = data;
-                const select = document.getElementById('select-talhao');
-                select.innerHTML = '<option value="">-- Selecione um Talhão --</option>';
-                data.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = t.codigo_talhao;
-                    select.appendChild(opt);
-                });
-            }
+        // Formata a data para YYYY-MM-DD (padrão da API)
+        function formatarData(date) {
+            return date.toISOString().split('T')[0];
         }
 
-        // Quando o usuário seleciona um talhão
-        document.getElementById('select-talhao').addEventListener('change', async function(e) {
-            const talhaoId = e.target.value;
-            if (!talhaoId) return;
+        async function buscarDados() {
+            const select = document.getElementById('select-cidade');
+            const cidadeValue = select.value;
+            
+            if (!cidadeValue) {
+                alert("Selecione um município.");
+                return;
+            }
 
-            const talhao = dadosTalhoes.find(t => t.id === talhaoId);
-            if (!talhao || !talhao.geom) return;
+            const coords = JSON.parse(cidadeValue);
+            const lat = coords.lat;
+            const lon = coords.lon;
 
             const status = document.getElementById('status-chuva');
+            const cardTotal = document.getElementById('card-total');
+            
             status.classList.remove('hidden');
-            status.innerText = 'Buscando dados meteorológicos na nuvem... Aguarde.';
+            cardTotal.classList.add('hidden');
+            status.innerText = "Buscando dados na nuvem... Isso pode levar alguns segundos.";
 
             try {
-                const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
-                
-                // Calcula o centro do polígono (média das coordenadas)
-                const coords = geojson.coordinates[0];
-                let sumLat = 0, sumLon = 0;
-                coords.forEach(c => { sumLon += c[0]; sumLat += c[1]; });
-                const lat = sumLat / coords.length;
-                const lon = sumLon / coords.length;
+                const dataFim = new Date();
+                const dataInicio12Meses = new Date();
+                dataInicio12Meses.setFullYear(dataFim.getFullYear() - 1);
 
-                // Chama a API Open-Meteo (Gratuita, não precisa de chave)
-                // Busca os últimos 30 dias (past_days=30) de chuva
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=30&daily=precipitation_sum&timezone=America/Sao_Paulo`;
+                const inicio = formatarData(dataInicio12Meses);
+                const fim = formatarData(dataFim);
+
+                // API de Arquivo do Open-Meteo (Histórico)
+                const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${inicio}&end_date=${fim}&daily=precipitation_sum&timezone=America/Sao_Paulo`;
                 
                 const response = await fetch(url);
                 const data = await response.json();
 
                 if (data && data.daily && data.daily.time) {
-                    desenharGrafico(data.daily.time, data.daily.precipitation_sum);
+                    const todasDatas = data.daily.time;
+                    const todaChuva = data.daily.precipitation_sum.map(v => v === null ? 0 : v);
+
+                    // 1. Calcular Total Acumulado (12 meses)
+                    const totalAcumulado = todaChuva.reduce((a, b) => a + b, 0);
+                    document.getElementById('total-acumulado').innerText = totalAcumulado.toFixed(1) + " mm";
+                    cardTotal.classList.remove('hidden');
                     status.classList.add('hidden');
+
+                    // 2. Separar os arrays para os gráficos
+                    // 15 dias (últimos 15 elementos)
+                    const datas15 = todasDatas.slice(-15);
+                    const chuva15 = todaChuva.slice(-15);
+
+                    // 3 meses (aprox 90 dias)
+                    const datas3 = todasDatas.slice(-90);
+                    const chuva3 = todaChuva.slice(-90);
+
+                    // 12 meses (tudo)
+                    const datas12 = todasDatas;
+                    const chuva12 = todaChuva;
+
+                    desenharGrafico('grafico15dias', datas15, chuva15, 'bar', 'rgba(54, 162, 235, 0.7)');
+                    desenharGrafico('grafico3meses', datas3, chuva3, 'bar', 'rgba(75, 192, 192, 0.7)');
+                    desenharGrafico('grafico12meses', datas12, chuva12, 'line', 'rgba(26, 71, 42, 0.8)');
+
                 } else {
-                    status.innerText = 'Não foi possível obter dados de chuva para este local.';
+                    status.innerText = "Não foi possível obter dados para este município.";
                 }
             } catch (error) {
-                status.innerText = 'Erro ao buscar dados: ' + error.message;
+                status.innerText = "Erro ao buscar dados: " + error.message;
             }
-        });
+        }
 
-        function desenharGrafico(labels, dados) {
-            const ctx = document.getElementById('graficoChuva').getContext('2d');
+        function desenharGrafico(canvasId, labels, dados, tipo, cor) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
             
             // Se já existe um gráfico, destroi para desenhar o novo
-            if (grafico) {
-                grafico.destroy();
+            let graficoExistente = Chart.getChart(canvasId);
+            if (graficoExistente) {
+                graficoExistente.destroy();
             }
 
-            grafico = new Chart(ctx, {
-                type: 'bar',
+            new Chart(ctx, {
+                type: tipo,
                 data: {
-                    labels: labels, // Datas
+                    labels: labels,
                     datasets: [{
                         label: 'Precipitação (mm)',
-                        data: dados, // Valores em mm
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
+                        data: dados,
+                        backgroundColor: cor,
+                        borderColor: cor,
+                        borderWidth: tipo === 'line' ? 2 : 1,
+                        fill: tipo === 'line' ? true : false,
+                        tension: 0.1
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { display: true, position: 'top' },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -165,12 +205,14 @@
                         }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: 'Milímetros (mm)' }
-                        },
-                        x: {
-                            title: { display: true, text: 'Data' }
+                        y: { beginAtZero: true },
+                        x: { 
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 12
+                            }
                         }
                     }
                 }
