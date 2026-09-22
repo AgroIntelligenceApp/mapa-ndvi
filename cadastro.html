@@ -3,181 +3,319 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cadastro de Talhão - Campo</title>
+    <title>Cadastro de Talhões - Agro Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Biblioteca para ler e gerar Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .tab-active { background-color: #1a472a; color: white; }
+        .tab-inactive { background-color: #374151; color: #9ca3af; }
+    </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-700">
+    <div class="w-full max-w-lg bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-700">
+        
         <div class="text-center mb-6">
-            <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">N</div>
-            <h1 class="text-xl font-bold">Novo Cadastro</h1>
-            <p class="text-gray-400 text-sm">Envie os dados do talhão coletado em campo</p>
+            <a href="dashboard.html" class="text-gray-400 text-sm hover:text-white">← Voltar ao Painel</a>
+            <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto my-3 text-2xl font-bold">N</div>
+            <h1 class="text-xl font-bold">Cadastro de Talhões</h1>
+            <p class="text-gray-400 text-sm">Escolha o método de cadastro</p>
         </div>
 
-        <!-- ONSUBMIT="RETURN FALSE" IMPEDE A PÁGINA DE RECARREGAR DE QUALQUER JEITO -->
-        <form id="formCadastro" onsubmit="return false;" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Nome do Cliente / Fazenda</label>
-                <input type="text" id="nome" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: Fazenda São José">
+        <!-- Abas de Seleção -->
+        <div class="flex p-1 bg-gray-700 rounded-lg mb-6">
+            <button id="tab-manual-btn" onclick="switchTab('manual')" class="tab-active flex-1 py-2 rounded-md font-bold transition">Manual (Demo)</button>
+            <button id="tab-lote-btn" onclick="switchTab('lote')" class="tab-inactive flex-1 py-2 rounded-md font-bold transition">Em Lote (Excel)</button>
+        </div>
+
+        <!-- FORMULÁRIO MANUAL -->
+        <div id="form-manual" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp</label>
+                    <input type="tel" id="manual-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="17997927252">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome do Talhão</label>
+                    <input type="text" id="manual-nome" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: Talhao_01">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Variedade</label>
+                    <input type="text" id="manual-variedade" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex: RB92579">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
+                    <select id="manual-tipo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                        <option value="Plantio">Plantio</option>
+                        <option value="Soca">Soca</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Corte</label>
+                    <select id="manual-corte" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                        <option value="1">1º</option><option value="2">2º</option><option value="3">3º</option><option value="4">4º</option><option value="5">5º</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Data Plantio</label>
+                    <input type="date" id="manual-data-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Data Corte</label>
+                    <input type="date" id="manual-data-ct" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">TCH Planejado</label>
+                    <input type="number" id="manual-tch-pl" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="85">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">TCH Realizado</label>
+                    <input type="number" id="manual-tch-re" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white" placeholder="0">
+                </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp (ID do Cliente)</label>
-                <input type="tel" id="whatsapp" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="(XX) XXXXX-XXXX">
-                <p class="text-gray-500 text-xs mt-1">O cliente fará login com este número no site.</p>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo KML/KMZ</label>
+                <input type="file" id="manual-arquivo" accept=".kml,.kmz" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
+            </div>
+
+            <div id="statusManual" class="text-sm text-center hidden p-3 rounded-lg"></div>
+            <button type="button" onclick="enviarManual()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">Cadastrar Talhão</button>
+        </div>
+
+        <!-- FORMULÁRIO EM LOTE -->
+        <div id="form-lote" class="space-y-4 hidden">
+            <div>
+                <button onclick="baixarModelo()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition">📥 Baixar Modelo de Excel</button>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo KML ou KMZ do Talhão</label>
-                <input type="file" id="arquivoKml" accept=".kml,.kmz" required class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
+                <label class="block text-sm font-medium text-gray-300 mb-1">WhatsApp do Cliente</label>
+                <input type="tel" id="lote-whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-green-500 outline-none" placeholder="DDD + Número">
             </div>
 
-            <div id="statusMsg" class="text-sm text-center hidden p-3 rounded-lg"></div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo Excel (.xlsx ou .csv)</label>
+                <input type="file" id="lote-excel" accept=".xlsx, .xls, .csv" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
+            </div>
 
-            <button type="button" id="btnSubmit" onclick="enviarDados()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex justify-center items-center">
-                Enviar e Gerar Mapa
-            </button>
-        </form>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo ZIP com os KMLs/KMZs</label>
+                <input type="file" id="lote-zip" accept=".zip" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
+            </div>
+
+            <div id="statusLote" class="text-sm text-center hidden p-3 rounded-lg"></div>
+            <button type="button" onclick="enviarLote()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">Cadastrar Lote Completo</button>
+        </div>
     </div>
 
     <script>
-        // Verifica se as bibliotecas carregaram
-        if (typeof JSZip === 'undefined' || typeof window.supabase === 'undefined') {
-            document.getElementById('statusMsg').classList.remove('hidden');
-            document.getElementById('statusMsg').className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-            document.getElementById('statusMsg').innerHTML = 'Erro: As bibliotecas demoraram para carregar. <b>Recarregue a página (Ctrl+Shift+R).</b>';
+        const supabaseClient = window.supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+
+        function switchTab(tab) {
+            if (tab === 'manual') {
+                document.getElementById('form-manual').classList.remove('hidden');
+                document.getElementById('form-lote').classList.add('hidden');
+                document.getElementById('tab-manual-btn').className = "tab-active flex-1 py-2 rounded-md font-bold transition";
+                document.getElementById('tab-lote-btn').className = "tab-inactive flex-1 py-2 rounded-md font-bold transition";
+            } else {
+                document.getElementById('form-manual').classList.add('hidden');
+                document.getElementById('form-lote').classList.remove('hidden');
+                document.getElementById('tab-manual-btn').className = "tab-inactive flex-1 py-2 rounded-md font-bold transition";
+                document.getElementById('tab-lote-btn').className = "tab-active flex-1 py-2 rounded-md font-bold transition";
+            }
         }
 
-        // CORREÇÃO: Mudamos o nome da variável para supabaseClient para não dar erro de duplicata
-        const supabaseClient = window.supabase.createClient(
-            'https://keiydgyountsuzjybsng.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg'
-        );
+        function baixarModelo() {
+            const dados = [
+                { talhao: "Talhao_01", variedade: "RB92579", tipo_plantio: "Plantio", numero_corte: 1, data_plantio: "2023-04-15", data_ultimo_corte: "", tch_planejado: 85.0, tch_realizado: 80.0, atr_planejado: 140, atr_realizado: 135 },
+                { talhao: "Talhao_02", variedade: "CTC4", tipo_plantio: "Soca", numero_corte: 3, data_plantio: "", data_ultimo_corte: "2023-08-10", tch_planejado: 65.0, tch_realizado: 0, atr_planejado: 130, atr_realizado: 0 }
+            ];
+            const ws = XLSX.utils.json_to_sheet(dados);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Talhões");
+            XLSX.writeFile(wb, "Modelo_Cadastro_Lote.xlsx");
+        }
 
-        let geomExtraida = null;
+        function extrairPoligonoDeKML(kmlText) {
+            const parser = new DOMParser();
+            const kml = parser.parseFromString(kmlText, 'text/xml');
+            const coordsEl = kml.getElementsByTagName('coordinates')[0];
+            if (!coordsEl) return null;
+            const coordsText = coordsEl.textContent.trim();
+            const coordsArray = coordsText.split(/\s+/).map(coord => {
+                const [lon, lat] = coord.split(',').map(Number);
+                return [lon, lat];
+            });
+            if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) { coordsArray.push(coordsArray[0]); }
+            return { "type": "Polygon", "coordinates": [coordsArray] };
+        }
 
-        // Lê o arquivo assim que o usuário seleciona
-        document.getElementById('arquivoKml').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        async function lerArquivoUnico(file) {
+            let kmlText = '';
+            if (file.name.endsWith('.kmz')) {
+                const zip = await JSZip.loadAsync(file);
+                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
+                kmlText = await zip.files[kmlFile].async('string');
+            } else { kmlText = await file.text(); }
+            return extrairPoligonoDeKML(kmlText);
+        }
+
+        async function enviarManual() {
+            const msgEl = document.getElementById('statusManual');
+            let whatsapp = document.getElementById('manual-whatsapp').value.replace(/\D/g, '');
+            if (whatsapp.length === 9) whatsapp = "17" + whatsapp;
+            const file = document.getElementById('manual-arquivo').files[0];
             
-            const msgEl = document.getElementById('statusMsg');
-            msgEl.classList.remove('hidden');
-            msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
-            msgEl.textContent = 'Lendo arquivo... Aguarde.';
-
-            try {
-                let kmlText = '';
-                if (file.name.endsWith('.kmz')) {
-                    const zip = await JSZip.loadAsync(file);
-                    const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
-                    if(!kmlFile) throw new Error("KML não encontrado dentro do KMZ");
-                    kmlText = await zip.files[kmlFile].async('string');
-                } else {
-                    kmlText = await file.text();
-                }
-
-                const parser = new DOMParser();
-                const kml = parser.parseFromString(kmlText, 'text/xml');
-                const coordsText = kml.getElementsByTagName('coordinates')[0].textContent.trim();
-
-                const coordsArray = coordsText.split(/\s+/).map(coord => {
-                    const [lon, lat] = coord.split(',').map(Number);
-                    return [lon, lat];
-                });
-
-                // Fecha o polígono se não estiver fechado
-                if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) {
-                    coordsArray.push(coordsArray[0]);
-                }
-
-                geomExtraida = {
-                    "type": "Polygon",
-                    "coordinates": [coordsArray]
-                };
-
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-300';
-                msgEl.textContent = 'Polígono lido com sucesso (' + coordsArray.length + ' pontos)!';
-            } catch (error) {
+            if (!file || whatsapp.length < 11) {
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.textContent = 'Erro ao ler o arquivo: ' + error.message;
-                geomExtraida = null;
-            }
-        });
-
-        // Função separada para enviar
-        async function enviarDados() {
-            const msgEl = document.getElementById('statusMsg');
-            const btn = document.getElementById('btnSubmit');
-            
-            if (!geomExtraida) {
+                msgEl.innerText = "Preencha WhatsApp e selecione o arquivo.";
                 msgEl.classList.remove('hidden');
-                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.textContent = 'Selecione um arquivo KML/KMZ válido primeiro!';
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = 'Enviando para o servidor...';
-            msgEl.classList.add('hidden');
-
-            const nome = document.getElementById('nome').value;
-            let whatsapp = document.getElementById('whatsapp').value.replace(/\D/g, ''); // Remove parênteses e traços
-            if (whatsapp.length === 9) whatsapp = "17" + whatsapp; // Adiciona DDD se mandar só 9 dígitos
+            msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
+            msgEl.innerText = "Lendo desenho e cadastrando...";
+            msgEl.classList.remove('hidden');
 
             try {
-                // 1. Verifica se o cliente JÁ EXISTE pelo WhatsApp
-                let { data: clienteExistente, error: errBusca } = await supabaseClient
-                    .from('clientes')
-                    .select('id')
-                    .eq('whatsapp', whatsapp)
-                    .maybeSingle();
-
+                let { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
                 let clienteId;
-
-                if (clienteExistente) {
-                    // Se o cliente já existe, pegamos o ID dele
-                    clienteId = clienteExistente.id;
-                } else {
-                    // Se não existe, criamos um novo cliente
-                    const { data: novoCliente, error: errInsertCliente } = await supabaseClient
-                        .from('clientes')
-                        .insert({ nome: nome, whatsapp: whatsapp, ativo: true })
-                        .select('id')
-                        .single();
-                        
-                    if(errInsertCliente) throw new Error("Erro ao salvar cliente: " + errInsertCliente.message);
-                    clienteId = novoCliente.id;
+                if (cli) { clienteId = cli.id; } 
+                else {
+                    const { data: novoCli, error: errC } = await supabaseClient.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp: whatsapp, ativo: true }).select('id').single();
+                    if(errC) throw errC; clienteId = novoCli.id;
                 }
 
-                // 2. Cadastra o Talhão vinculado a esse clienteId
-                const idTalhao = crypto.randomUUID();
-                const { error: errTalhao } = await supabaseClient.from('talhoes').insert({
-                    id: idTalhao,
-                    codigo_talhao: nome.substring(0, 20),
-                    geom: geomExtraida,
-                    cliente_id: clienteId
+                const geom = await lerArquivoUnico(file);
+                if (!geom) throw new Error("Erro ao ler o KML/KMZ.");
+
+                const parseDate = (id) => { const v = document.getElementById(id).value; return v ? v.split(' ')[0] : null; };
+                const parseNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : 0; };
+
+                const { error: errT } = await supabaseClient.from('talhoes').insert({
+                    id: crypto.randomUUID(),
+                    cliente_id: clienteId,
+                    codigo_talhao: document.getElementById('manual-nome').value.substring(0, 20),
+                    geom: geom,
+                    variedade: document.getElementById('manual-variedade').value || 'Não Informada',
+                    tipo_plantio: document.getElementById('manual-tipo').value,
+                    numero_corte: parseInt(document.getElementById('manual-corte').value),
+                    data_plantio: parseDate('manual-data-pl'),
+                    data_ultimo_corte: parseDate('manual-data-ct'),
+                    tch_planejado: parseNum('manual-tch-pl'),
+                    tch_realizado: parseNum('manual-tch-re'),
+                    atr_planejado: 0, // Pode adicionar inputs depois se quiser
+                    atr_realizado: 0
                 });
 
-                if(errTalhao) throw new Error("Erro ao salvar talhão: " + errTalhao.message);
-
-                // 3. Sucesso!
-                msgEl.classList.remove('hidden');
+                if (errT) throw errT;
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
-                msgEl.innerHTML = `
-                    <b>SUCESSO! Talhão salvo e vinculado ao cliente ${nome}.</b><br><br>
-                    O mapa não vai aparecer imediatamente. Ele só ficará visível para o cliente após o Python rodar na nuvem (GitHub Actions) e gerar a imagem de satélite.
-                `;
-                btn.textContent = 'Cadastro Concluído';
-
+                msgEl.innerHTML = `<b>SUCESSO! Talhão cadastrado.</b><br>Rode o Python nas Actions para gerar a imagem.`;
             } catch (error) {
-                msgEl.classList.remove('hidden');
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.textContent = 'Erro: ' + error.message;
-                btn.disabled = false;
-                btn.textContent = 'Tentar Novamente';
+                msgEl.innerText = "Erro: " + error.message;
+            }
+        }
+
+        async function enviarLote() {
+            const msgEl = document.getElementById('statusLote');
+            let whatsapp = document.getElementById('lote-whatsapp').value.replace(/\D/g, '');
+            if (whatsapp.length === 9) whatsapp = "17" + whatsapp;
+            const excelFile = document.getElementById('lote-excel').files[0];
+            const zipFile = document.getElementById('lote-zip').files[0];
+
+            if (!excelFile || !zipFile || whatsapp.length < 11) {
+                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
+                msgEl.innerText = "Preencha o WhatsApp e selecione os dois arquivos.";
+                msgEl.classList.remove('hidden');
+                return;
+            }
+
+            msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
+            msgEl.innerText = "Processando... Pode levar 1 minuto.";
+            msgEl.classList.remove('hidden');
+
+            try {
+                const { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                let clienteId;
+                if (cli) { clienteId = cli.id; } 
+                else {
+                    const { data: novoCli, error: errC } = await supabaseClient.from('clientes').insert({ nome: "Cliente " + whatsapp, whatsapp: whatsapp, ativo: true }).select('id').single();
+                    if(errC) throw errC; clienteId = novoCli.id;
+                }
+
+                const excelData = await excelFile.arrayBuffer();
+                const workbook = XLSX.read(excelData);
+                const dadosExcel = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                const zip = await JSZip.loadAsync(zipFile);
+                let talhoesParaSalvar = [];
+
+                msgEl.innerText = "Cruzando dados do Excel com os desenhos...";
+
+                for (const linha of dadosExcel) {
+                    const nomeTalhao = String(linha.talhao || "").trim();
+                    if (!nomeTalhao) continue;
+
+                    const kmlZipEntry = Object.values(zip.files).find(f => 
+                        !f.dir && f.name.toLowerCase().includes(nomeTalhao.toLowerCase()) && (f.name.toLowerCase().endsWith('.kml') || f.name.toLowerCase().endsWith('.kmz'))
+                    );
+
+                    if (!kmlZipEntry) { continue; }
+
+                    let kmlText = "";
+                    if (kmlZipEntry.name.toLowerCase().endsWith('.kmz')) {
+                        const nestedZip = await JSZip.loadAsync(await kmlZipEntry.async('blob'));
+                        const kmlFile = Object.keys(nestedZip.files).find(f => f.endsWith('.kml'));
+                        kmlText = await nestedZip.files[kmlFile].async('string');
+                    } else { kmlText = await kmlZipEntry.async('string'); }
+
+                    const geom = extrairPoligonoDeKML(kmlText);
+                    if (!geom) continue;
+
+                    const isNullOrEmpty = (val) => (val === undefined || val === null || val === "");
+                    const parseNum = (val) => isNullOrEmpty(val) ? 0 : parseFloat(val);
+                    const parseDate = (val) => isNullOrEmpty(val) ? null : String(val).split(' ')[0];
+
+                    talhoesParaSalvar.push({
+                        id: crypto.randomUUID(),
+                        cliente_id: clienteId,
+                        codigo_talhao: nomeTalhao.substring(0, 20),
+                        geom: geom,
+                        variedade: isNullOrEmpty(linha.variedade) ? 'Não Informada' : String(linha.variedade),
+                        tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
+                        numero_corte: isNullOrEmpty(linha.numero_corte) ? 1 : parseInt(linha.numero_corte),
+                        data_plantio: parseDate(linha.data_plantio),
+                        data_ultimo_corte: parseDate(linha.data_ultimo_corte),
+                        tch_planejado: parseNum(linha.tch_planejado),
+                        tch_realizado: parseNum(linha.tch_realizado),
+                        atr_planejado: parseNum(linha.atr_planejado),
+                        atr_realizado: parseNum(linha.atr_realizado)
+                    });
+                }
+
+                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum nome do Excel encontrado dentro do ZIP.");
+                
+                msgEl.innerText = "Salvando " + talhoesParaSalvar.length + " talhões no banco...";
+                const { error: errInsert } = await supabaseClient.from('talhoes').insert(talhoesParaSalvar);
+                if (errInsert) throw errInsert;
+
+                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-green-900 text-green-200';
+                msgEl.innerHTML = `<b>SUCESSO! ${talhoesParaSalvar.length} talhões cadastrados.</b>`;
+            } catch (error) {
+                msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
+                msgEl.innerText = "Erro: " + error.message;
             }
         }
     </script>
