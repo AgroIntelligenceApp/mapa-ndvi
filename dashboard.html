@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro Intelligence | Painel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    
+    <!-- Header -->
+    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-10">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-lg font-bold">Agro Intelligence</h1>
+                <p class="text-xs opacity-80">Painel do Cliente</p>
+            </div>
+        </div>
+        <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm">Sair</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 flex flex-col items-center">
+        <div class="text-center mb-10">
+            <h2 class="text-2xl font-bold text-gray-800">Bem-vindo!</h2>
+            <p id="nome-cliente" class="text-gray-600 font-medium">Carregando...</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+            <!-- Card 1: Mapa NDVI -->
+            <a href="index.html?view=map" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+                <div class="text-5xl mb-4">🛰️</div>
+                <h3 class="text-xl font-bold text-gray-800">Mapa NDVI</h3>
+                <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade dos seus talhões.</p>
+            </a>
+
+            <!-- Card 2: Dados de Chuva -->
+            <a href="chuvas.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 opacity-60 cursor-not-allowed">
+                <div class="text-5xl mb-4">🌧️</div>
+                <h3 class="text-xl font-bold text-gray-800">Dados de Chuva</h3>
+                <p class="text-gray-500 text-sm text-center mt-2">Relatórios climáticos e estimativa de volume de chuva.</p>
+                <span class="mt-3 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Em breve</span>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const supabaseUrl = 'https://keiydgyountsuzjybsng.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        window.onload = async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            const whatsapp = session.user.email.replace('@app.ndvi', '');
+            const { data: cliente } = await supabaseClient.from('clientes').select('nome').eq('whatsapp', whatsapp).single();
+            
+            if (cliente) {
+                document.getElementById('nome-cliente').innerText = cliente.nome;
+            } else {
+                document.getElementById('nome-cliente').innerText = "Cliente";
+            }
+        };
+
+        async function deslogar() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
