@@ -123,7 +123,7 @@
             
             <div class="painel-lateral" id="painel-lateral">
                 <div class="busca-container">
-                    <input type="text" id="campo-busca" placeholder="Buscar talhão (ex: 70010)" oninput="filtrarLista()">
+                    <input type="text" id="campo-busca" placeholder="Buscar talhão (ex: 1010-10)" oninput="filtrarLista()">
                 </div>
                 <div class="container-cultura">
                     <select id="select-cultura">
@@ -170,21 +170,17 @@
             window.addEventListener('resize', () => { isMobile = window.innerWidth <= 768; });
             const { data: { session } } = await supabaseClient.auth.getSession();
             
-            // Pega o parâmetro da URL para saber se o usuário clicou no card do mapa
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
 
             if (session) {
                 const whatsapp = session.user.email.replace('@app.ndvi', '');
-                // Se tem sessão mas não clicou no mapa, manda pro painel principal
                 if (view !== 'map') {
                     window.location.href = 'dashboard.html';
                     return;
                 }
-                // Se clicou no mapa, valida o acesso e carrega
                 await validarAcessoELoadar(whatsapp);
             } else {
-                // Se não tem sessão, mostra a tela de login
                 mostrarTela('login');
             }
         };
@@ -210,8 +206,6 @@
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailFake, password: senha });
                 if (error) throw error;
-                
-                // SUCESSO NO LOGIN -> REDIRECIONA PARA O PAINEL (DASHBOARD)
                 window.location.href = 'dashboard.html';
             } catch (error) {
                 msgErro.style.color = "red";
@@ -229,7 +223,8 @@
         }
 
         async function buscarTalhoes() {
-            const { data, error } = await supabaseClient.from('talhoes').select('id, codigo_talhao, geom, imagem_ndvi, data_ndvi, ndvi_medio, area_hectares').eq('cliente_id', clienteId).eq('tem_ndvi', true);
+            // Atualizado para buscar o codigo_bloco também
+            const { data, error } = await supabaseClient.from('talhoes').select('id, codigo_talhao, codigo_bloco, geom, imagem_ndvi, data_ndvi, ndvi_medio, area_hectares').eq('cliente_id', clienteId).eq('tem_ndvi', true);
             if (!error) { dadosTalhoes = data; renderizarLista(dadosTalhoes); iniciarMapa(); }
         }
 
@@ -238,14 +233,28 @@
             container.innerHTML = '';
             document.getElementById('barra-data').innerText = 'Selecione talhões e aguarde...';
             talhoes.forEach(talhao => {
+                // JUNTA O BLOCO COM O TALHÃO (ex: 1010-10)
+                let nomeExibicao = talhao.codigo_talhao;
+                if (talhao.codigo_bloco) {
+                    nomeExibicao = `${talhao.codigo_bloco}-${talhao.codigo_talhao}`;
+                }
+
                 const div = document.createElement('div');
                 div.className = 'item-talhao';
-                div.innerHTML = `<input type="checkbox" class="check-talhao" value="${talhao.id}" onchange="atualizarMapa()"><label>${talhao.codigo_talhao}</label>`;
+                div.innerHTML = `<input type="checkbox" class="check-talhao" value="${talhao.id}" onchange="atualizarMapa()"><label>${nomeExibicao}</label>`;
                 container.appendChild(div);
             });
         }
 
-        function filtrarLista() { const termo = document.getElementById('campo-busca').value.toLowerCase(); const filtrados = dadosTalhoes.filter(t => t.codigo_talhao.toLowerCase().includes(termo)); renderizarLista(filtrados); }
+        function filtrarLista() { 
+            const termo = document.getElementById('campo-busca').value.toLowerCase(); 
+            const filtrados = dadosTalhoes.filter(t => {
+                let nome = t.codigo_talhao;
+                if (t.codigo_bloco) nome = `${t.codigo_bloco}-${t.codigo_talhao}`;
+                return nome.toLowerCase().includes(termo);
+            }); 
+            renderizarLista(filtrados); 
+        }
         function marcarTodos() { document.querySelectorAll('.check-talhao').forEach(cb => cb.checked = true); atualizarMapa(); }
         function desmarcarTodos() { document.querySelectorAll('.check-talhao').forEach(cb => cb.checked = false); atualizarMapa(); }
 
