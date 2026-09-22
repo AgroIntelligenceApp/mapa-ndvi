@@ -121,8 +121,8 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo ZIP com os KMLs/KMZs</label>
-                <input type="file" id="lote-zip" accept=".zip" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
+                <label class="block text-sm font-medium text-gray-300 mb-1">Arquivo Único KML/KMZ (do Google Earth)</label>
+                <input type="file" id="lote-kml" accept=".kml,.kmz" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white cursor-pointer bg-gray-700 border border-gray-600 rounded-lg">
             </div>
 
             <div id="statusLote" class="text-sm text-center hidden p-3 rounded-lg"></div>
@@ -158,12 +158,62 @@
             XLSX.writeFile(wb, "Modelo_Cadastro_Lote.xlsx");
         }
 
-        // Limpa apenas espaços, mas mantém o traço para não misturar números de bloco e talhão
         function normalizarNome(str) {
             return String(str).replace(/\s+/g, '').toLowerCase();
         }
 
-        function extrairPoligonoDeKML(kmlText) {
+        // Lê UM ÚNICO arquivo KML/KMZ e extrai TODOS os polígonos (Placemarks) com seus nomes
+        async function lerPoligonosDeKmlUnico(file) {
+            let kmlText = '';
+            if (file.name.toLowerCase().endsWith('.kmz')) {
+                const zip = await JSZip.loadAsync(file);
+                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
+                kmlText = await zip.files[kmlFile].async('string');
+            } else {
+                kmlText = await file.text();
+            }
+
+            const parser = new DOMParser();
+            const kml = parser.parseFromString(kmlText, 'text/xml');
+            const placemarks = kml.getElementsByTagName('Placemark');
+            let poligonos = [];
+
+            for (let i = 0; i < placemarks.length; i++) {
+                const pm = placemarks[i];
+                const nameEl = pm.getElementsByTagName('name')[0];
+                const coordsEl = pm.getElementsByTagName('coordinates')[0];
+                
+                if (!nameEl || !coordsEl) continue;
+
+                const nome = nameEl.textContent.trim();
+                const coordsText = coordsEl.textContent.trim();
+                const coordsArray = coordsText.split(/\s+/).map(coord => {
+                    const parts = coord.split(',');
+                    const lon = parseFloat(parts[0]);
+                    const lat = parseFloat(parts[1]);
+                    return [lon, lat];
+                });
+
+                if (coordsArray.length > 0 && coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) {
+                    coordsArray.push(coordsArray[0]);
+                }
+
+                poligonos.push({
+                    nome: nome,
+                    geom: { "type": "Polygon", "coordinates": [coordsArray] }
+                });
+            }
+            return poligonos;
+        }
+
+        async function lerArquivoUnico(file) {
+            let kmlText = '';
+            if (file.name.endsWith('.kmz')) {
+                const zip = await JSZip.loadAsync(file);
+                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
+                kmlText = await zip.files[kmlFile].async('string');
+            } else { kmlText = await file.text(); }
+            
             const parser = new DOMParser();
             const kml = parser.parseFromString(kmlText, 'text/xml');
             const coordsEl = kml.getElementsByTagName('coordinates')[0];
@@ -175,16 +225,6 @@
             });
             if (coordsArray[0][0] !== coordsArray[coordsArray.length-1][0]) { coordsArray.push(coordsArray[0]); }
             return { "type": "Polygon", "coordinates": [coordsArray] };
-        }
-
-        async function lerArquivoUnico(file) {
-            let kmlText = '';
-            if (file.name.endsWith('.kmz')) {
-                const zip = await JSZip.loadAsync(file);
-                const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
-                kmlText = await zip.files[kmlFile].async('string');
-            } else { kmlText = await file.text(); }
-            return extrairPoligonoDeKML(kmlText);
         }
 
         async function enviarManual() {
@@ -251,17 +291,17 @@
             let whatsapp = document.getElementById('lote-whatsapp').value.replace(/\D/g, '');
             if (whatsapp.length === 9) whatsapp = "17" + whatsapp;
             const excelFile = document.getElementById('lote-excel').files[0];
-            const zipFile = document.getElementById('lote-zip').files[0];
+            const kmlFile = document.getElementById('lote-kml').files[0];
 
-            if (!excelFile || !zipFile || whatsapp.length < 11) {
+            if (!excelFile || !kmlFile || whatsapp.length < 11) {
                 msgEl.className = 'text-sm text-center p-3 rounded-lg bg-red-900 text-red-300';
-                msgEl.innerText = "Preencha o WhatsApp e selecione os dois arquivos.";
+                msgEl.innerText = "Preencha o WhatsApp e selecione o Excel e o KML.";
                 msgEl.classList.remove('hidden');
                 return;
             }
 
             msgEl.className = 'text-sm text-center p-3 rounded-lg bg-blue-900 text-blue-300';
-            msgEl.innerText = "Processando... Pode levar 1 minuto.";
+            msgEl.innerText = "Lendo arquivos... Pode levar 1 minuto.";
             msgEl.classList.remove('hidden');
 
             try {
@@ -273,12 +313,14 @@
                     if(errC) throw errC; clienteId = novoCli.id;
                 }
 
+                msgEl.innerText = "Extraindo polígonos do KML/KMZ...";
+                const poligonosKml = await lerPoligonosDeKmlUnico(kmlFile);
+
                 const excelData = await excelFile.arrayBuffer();
                 const workbook = XLSX.read(excelData);
                 const dadosExcel = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                const zip = await JSZip.loadAsync(zipFile);
+                
                 let talhoesParaSalvar = [];
-
                 msgEl.innerText = "Cruzando dados do Excel com os desenhos...";
 
                 for (const linha of dadosExcel) {
@@ -286,41 +328,23 @@
                     const codigoBloco = String(linha.codigo_bloco || "").trim();
                     if (!nomeTalhao) continue;
 
-                    // Junta o Bloco e o Talhão com um traço (ex: "1010" + "-" + "10" = "1010-10")
                     const buscaComposta = normalizarNome(codigoBloco + "-" + nomeTalhao);
                     const buscaTalhao = normalizarNome(nomeTalhao);
 
-                    const kmlZipEntry = Object.values(zip.files).find(f => {
-                        if (f.dir) return false;
-                        const nome = f.name.toLowerCase();
-                        if (!nome.endsWith('.kml') && !nome.endsWith('.kmz')) return false;
-                        
-                        // Pega só o nome do arquivo sem a pasta e sem a extensão
-                        const baseName = nome.split('/').pop().replace(/\.(kml|kmz)$/, '');
-                        const baseLimpa = normalizarNome(baseName); // ex: "1010-10"
-                        
-                        // Se tiver bloco, verifica se o nome do arquivo CONTEM a junção do bloco com o traço
+                    // Procura o polígono dentro do KML que case com o Bloco-Talhão do Excel
+                    const matchPoligono = poligonosKml.find(p => {
+                        const nomeLimpo = normalizarNome(p.nome);
                         if (codigoBloco) {
-                            return baseLimpa.includes(buscaComposta);
+                            return nomeLimpo.includes(buscaComposta);
                         } else {
-                            return baseLimpa.includes(buscaTalhao);
+                            return nomeLimpo.includes(buscaTalhao);
                         }
                     });
 
-                    if (!kmlZipEntry) { 
-                        console.warn("KML não encontrado no ZIP para o talhão: Bloco " + codigoBloco + " Talhão " + nomeTalhao);
+                    if (!matchPoligono) { 
+                        console.warn("Desenho não encontrado no KML para o talhão: Bloco " + codigoBloco + " Talhão " + nomeTalhao);
                         continue; 
                     }
-
-                    let kmlText = "";
-                    if (kmlZipEntry.name.toLowerCase().endsWith('.kmz')) {
-                        const nestedZip = await JSZip.loadAsync(await kmlZipEntry.async('blob'));
-                        const kmlFile = Object.keys(nestedZip.files).find(f => f.endsWith('.kml'));
-                        kmlText = await nestedZip.files[kmlFile].async('string');
-                    } else { kmlText = await kmlZipEntry.async('string'); }
-
-                    const geom = extrairPoligonoDeKML(kmlText);
-                    if (!geom) continue;
 
                     const isNullOrEmpty = (val) => (val === undefined || val === null || val === "");
                     const parseNum = (val) => isNullOrEmpty(val) ? 0 : parseFloat(val);
@@ -332,7 +356,7 @@
                         codigo_talhao: nomeTalhao.substring(0, 20),
                         nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'Não Informada' : String(linha.nome_fazenda),
                         codigo_bloco: codigoBloco,
-                        geom: geom,
+                        geom: matchPoligono.geom,
                         variedade: isNullOrEmpty(linha.variedade) ? 'Não Informada' : String(linha.variedade),
                         tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
                         numero_corte: isNullOrEmpty(linha.numero_corte) ? 1 : parseInt(linha.numero_corte),
@@ -345,7 +369,7 @@
                     });
                 }
 
-                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum arquivo do ZIP foi casado com os dados do Excel. Verifique se os nomes dos arquivos KML contêm o Bloco e o Talhão juntos (ex: 1010-10.kml).");
+                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum desenho do KML casou com os dados do Excel. Verifique se os nomes dos talhões no Google Earth contêm o Bloco e o Talhão (ex: 1010-10).");
                 
                 msgEl.innerText = "Salvando " + talhoesParaSalvar.length + " talhões no banco...";
                 const { error: errInsert } = await supabaseClient.from('talhoes').insert(talhoesParaSalvar);
