@@ -27,15 +27,13 @@
 
         /* TELA DO APP */
         #tela-app { display: none; flex: 1; flex-direction: column; height: 100vh; height: 100dvh; }
-        
-        /* CABEÇALHO COM 3 COLUNAS (LOGO | TITULO | SAIR) */
         .header { background: #1a472a; color: white; padding: 5px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
-        .header-left { width: 80px; display: flex; align-items: center; }
-        .header-logo { max-height: 45px; max-width: 80px; object-fit: contain; }
+        .header-left { width: 100px; display: flex; align-items: center; }
+        .header-logo { max-height: 45px; max-width: 100px; object-fit: contain; }
         .header-titulos { text-align: center; flex: 1; }
         .header-titulos h1 { font-size: 18px; line-height: 1.2; display: block; }
         .header-titulos p { font-size: 12px; opacity: 0.8; line-height: 1.2; display: block; }
-        .header-right { width: 80px; display: flex; justify-content: flex-end; }
+        .header-right { width: 100px; display: flex; justify-content: flex-end; }
         .btn-logout { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; }
 
         .corpo { display: flex; flex: 1; overflow: hidden; position: relative; }
@@ -89,8 +87,13 @@
             <div id="logo-fallback" class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold" style="display: none; width: 64px; height: 64px;">A</div>
             <h2>Agro Intelligence</h2>
             <p class="subtitulo">Mapa NDVI</p>
+            
             <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: 17997927252)" maxlength="15">
             <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
+            
+            <!-- NOVO CAMPO DE SENHA -->
+            <input type="password" id="campo-senha" placeholder="Sua Senha" style="margin-top: 15px;">
+            
             <button onclick="fazerLogin()">Entrar</button>
             <div id="msg-erro-login"></div>
             <p style="margin-top: 20px; font-size: 14px; color: #666;">
@@ -178,16 +181,22 @@
         async function fazerLogin() {
             const msgErro = document.getElementById('msg-erro-login');
             const whatsappFormatado = padronizarWhatsapp(document.getElementById('campo-whatsapp').value);
+            const senha = document.getElementById('campo-senha').value; // PEGA A SENHA DIGITADA
+
             if (whatsappFormatado.length < 11) { msgErro.innerText = "Digite um número válido (DDD + Número)."; msgErro.style.color = "red"; return; }
+            if (!senha) { msgErro.innerText = "Digite sua senha."; msgErro.style.color = "red"; return; } // VALIDA SE A SENHA NAO ESTA VAZIA
+
             msgErro.innerText = "Verificando..."; msgErro.style.color = "#666";
-            const emailFake = whatsappFormatado + "@app.ndvi"; const senha = whatsappFormatado; 
+            const emailFake = whatsappFormatado + "@app.ndvi"; 
+
             try {
+                // USA A SENHA REAL DIGITADA PELO USUARIO
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email: emailFake, password: senha });
                 if (error) throw error;
                 await validarAcessoELoadar(whatsappFormatado);
             } catch (error) {
                 msgErro.style.color = "red";
-                msgErro.innerText = error.message.includes("Invalid login") ? "Usuário ou senha incorretos." : "Erro: " + error.message;
+                msgErro.innerText = error.message.includes("Invalid login") ? "Número ou senha incorretos." : "Erro: " + error.message;
             }
         }
 
