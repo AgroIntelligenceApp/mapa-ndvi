@@ -50,7 +50,8 @@
             document.getElementById('statusMsg').innerHTML = 'Erro: As bibliotecas demoraram para carregar. <b>Recarregue a página (Ctrl+Shift+R).</b>';
         }
 
-        const supabase = window.supabase.createClient(
+        // CORREÇÃO: Mudamos o nome da variável para supabaseClient para não dar erro de duplicata
+        const supabaseClient = window.supabase.createClient(
             'https://keiydgyountsuzjybsng.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg'
         );
@@ -128,7 +129,7 @@
 
             try {
                 // 1. Verifica se o cliente JÁ EXISTE pelo WhatsApp
-                let { data: clienteExistente, error: errBusca } = await supabase
+                let { data: clienteExistente, error: errBusca } = await supabaseClient
                     .from('clientes')
                     .select('id')
                     .eq('whatsapp', whatsapp)
@@ -141,7 +142,7 @@
                     clienteId = clienteExistente.id;
                 } else {
                     // Se não existe, criamos um novo cliente
-                    const { data: novoCliente, error: errInsertCliente } = await supabase
+                    const { data: novoCliente, error: errInsertCliente } = await supabaseClient
                         .from('clientes')
                         .insert({ nome: nome, whatsapp: whatsapp, ativo: true })
                         .select('id')
@@ -153,7 +154,7 @@
 
                 // 2. Cadastra o Talhão vinculado a esse clienteId
                 const idTalhao = crypto.randomUUID();
-                const { error: errTalhao } = await supabase.from('talhoes').insert({
+                const { error: errTalhao } = await supabaseClient.from('talhoes').insert({
                     id: idTalhao,
                     codigo_talhao: nome.substring(0, 20),
                     geom: geomExtraida,
