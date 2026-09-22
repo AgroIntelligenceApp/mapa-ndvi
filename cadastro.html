@@ -158,6 +158,11 @@
             XLSX.writeFile(wb, "Modelo_Cadastro_Lote.xlsx");
         }
 
+        // Limpa apenas espaços, mas mantém o traço para não misturar números de bloco e talhão
+        function normalizarNome(str) {
+            return String(str).replace(/\s+/g, '').toLowerCase();
+        }
+
         function extrairPoligonoDeKML(kmlText) {
             const parser = new DOMParser();
             const kml = parser.parseFromString(kmlText, 'text/xml');
@@ -278,13 +283,34 @@
 
                 for (const linha of dadosExcel) {
                     const nomeTalhao = String(linha.talhao || "").trim();
+                    const codigoBloco = String(linha.codigo_bloco || "").trim();
                     if (!nomeTalhao) continue;
 
-                    const kmlZipEntry = Object.values(zip.files).find(f => 
-                        !f.dir && f.name.toLowerCase().includes(nomeTalhao.toLowerCase()) && (f.name.toLowerCase().endsWith('.kml') || f.name.toLowerCase().endsWith('.kmz'))
-                    );
+                    // Junta o Bloco e o Talhão com um traço (ex: "1010" + "-" + "10" = "1010-10")
+                    const buscaComposta = normalizarNome(codigoBloco + "-" + nomeTalhao);
+                    const buscaTalhao = normalizarNome(nomeTalhao);
 
-                    if (!kmlZipEntry) { continue; }
+                    const kmlZipEntry = Object.values(zip.files).find(f => {
+                        if (f.dir) return false;
+                        const nome = f.name.toLowerCase();
+                        if (!nome.endsWith('.kml') && !nome.endsWith('.kmz')) return false;
+                        
+                        // Pega só o nome do arquivo sem a pasta e sem a extensão
+                        const baseName = nome.split('/').pop().replace(/\.(kml|kmz)$/, '');
+                        const baseLimpa = normalizarNome(baseName); // ex: "1010-10"
+                        
+                        // Se tiver bloco, usa a busca composta, senão usa só o talhao
+                        if (codigoBloco) {
+                            return baseLimpa === buscaComposta;
+                        } else {
+                            return baseLimpa.includes(buscaTalhao);
+                        }
+                    });
+
+                    if (!kmlZipEntry) { 
+                        console.warn("KML não encontrado no ZIP para o talhão: Bloco " + codigoBloco + " Talhão " + nomeTalhao);
+                        continue; 
+                    }
 
                     let kmlText = "";
                     if (kmlZipEntry.name.toLowerCase().endsWith('.kmz')) {
@@ -305,7 +331,7 @@
                         cliente_id: clienteId,
                         codigo_talhao: nomeTalhao.substring(0, 20),
                         nome_fazenda: isNullOrEmpty(linha.nome_fazenda) ? 'Não Informada' : String(linha.nome_fazenda),
-                        codigo_bloco: isNullOrEmpty(linha.codigo_bloco) ? '' : String(linha.codigo_bloco),
+                        codigo_bloco: codigoBloco,
                         geom: geom,
                         variedade: isNullOrEmpty(linha.variedade) ? 'Não Informada' : String(linha.variedade),
                         tipo_plantio: isNullOrEmpty(linha.tipo_plantio) ? 'Plantio' : String(linha.tipo_plantio),
@@ -319,7 +345,7 @@
                     });
                 }
 
-                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum nome do Excel encontrado dentro do ZIP.");
+                if (talhoesParaSalvar.length === 0) throw new Error("Nenhum arquivo do ZIP foi casado com os dados do Excel. Verifique se os nomes dos arquivos KML contêm o Bloco e o Talhão juntos (ex: 1010-10.kml).");
                 
                 msgEl.innerText = "Salvando " + talhoesParaSalvar.length + " talhões no banco...";
                 const { error: errInsert } = await supabaseClient.from('talhoes').insert(talhoesParaSalvar);
