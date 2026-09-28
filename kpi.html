@@ -55,6 +55,19 @@
                     <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Corte</th><th class="py-2 text-xs text-right">Área</th><th class="py-2 text-xs text-right">Idade</th></tr></thead><tbody id="tabela-cortes" class="divide-y"></tbody></table>
                 </div>
             </div>
+
+            <!-- SEÇÃO DO POWER BI DINÂMICO -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📈 Relatório Dinâmico (Power BI)</h3>
+                <div id="container-powerbi" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
+                    <iframe id="iframe-powerbi" title="Relatório Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
+                </div>
+                <div id="aviso-powerbi" class="w-full text-center text-gray-500 p-8 hidden">
+                    <p class="font-bold">Relatório em elaboração.</p>
+                    <p class="text-sm">O dashboard em Power BI para este cliente está sendo preparado pela nossa equipe técnica.</p>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -78,8 +91,18 @@
             const { data: { session } } = await sb.auth.getSession();
             if (!session) return window.location.href = 'index.html';
             const whatsapp = session.user.email.replace('@app.ndvi', '');
-            const { data: cliente } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).single();
+            
+            // Busca agora o link do Power BI também!
+            const { data: cliente, error: errCli } = await sb.from('clientes').select('id, link_powerbi').eq('whatsapp', whatsapp).single();
             if (!cliente) return;
+
+            // Lógica do Power BI
+            if (cliente.link_powerbi) {
+                document.getElementById('iframe-powerbi').src = cliente.link_powerbi;
+                document.getElementById('container-powerbi').classList.remove('hidden');
+            } else {
+                document.getElementById('aviso-powerbi').classList.remove('hidden');
+            }
 
             const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cliente.id);
 
