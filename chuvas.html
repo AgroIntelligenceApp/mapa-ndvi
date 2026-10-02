@@ -6,18 +6,18 @@
     <title>Agro Intelligence | Dados de Chuva</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Biblioteca de Gráficos nativa -->
+    <!-- Bibliotecas de Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Plugin para escrever valores em cima das barras -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <style>
+        .resultados-busca { max-height: 200px; overflow-y: auto; }
+        .item-busca:hover { background-color: #f0f0f0; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <!-- Header -->
     <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-10">
-        <a href="dashboard.html" style="text-decoration: none; color: white; font-size: 14px; font-weight: bold;">
-            ← Painel
-        </a>
+        <a href="dashboard.html" style="text-decoration: none; color: white; font-size: 14px; font-weight: bold;">← Painel</a>
         <div class="flex items-center gap-2">
             <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
             <div class="text-right">
@@ -28,29 +28,23 @@
         <div style="width: 50px;"></div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 p-4 md:p-8 flex flex-col items-center w-full max-w-5xl mx-auto">
         
-        <!-- Card de Seleção -->
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico de Chuvas</h2>
-            <div class="flex flex-col gap-4">
-                <select id="select-cidade" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
-                    <option value="">-- Selecione o Município --</option>
-                    <option value='{"lat": -20.4226, "lon": -49.9725}'>Votuporanga - SP</option>
-                    <option value='{"lat": -21.0419, "lon": -49.7636}'>Tanabi - SP</option>
-                    <option value='{"lat": -20.7889, "lon": -49.4031}'>São José do Rio Preto - SP</option>
-                    <option value='{"lat": -20.6219, "lon": -49.0658}'>Mirassol - SP</option>
-                    <option value='{"lat": -19.9333, "lon": -50.4878}'>Fernandópolis - SP</option>
-                </select>
-                
-                <button onclick="buscarDados()" class="bg-[#1a472a] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2d8659] transition duration-200">
-                    Buscar Dados
-                </button>
+            
+            <!-- NOVA CAIXA DE BUSCA INTELIGENTE -->
+            <label class="block text-sm font-medium text-gray-300 mb-1 text-gray-600">Buscar Município</label>
+            <div class="relative">
+                <input type="text" id="input-cidade" oninput="buscarCidades()" placeholder="Digite o nome da cidade (ex: Uberaba)" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
+                <div id="resultados-busca" class="resultados-busca absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 hidden"></div>
             </div>
+            
+            <button onclick="buscarDados()" class="w-full bg-[#1a472a] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2d8659] transition duration-200 mt-4">
+                Buscar Dados
+            </button>
         </div>
 
-        <!-- Status de Carregamento -->
         <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50 mb-6">Processando...</div>
 
         <!-- Gráficos -->
@@ -81,7 +75,7 @@
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-700">Acumulado por Mês (Últimos 12 Meses)</h3>
-                <span id="total-12meses" class="bg-green-100 text-green-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
+                <span id="total-12meses" class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
             </div>
             <canvas id="grafico12meses" height="100"></canvas>
         </div>
@@ -89,20 +83,50 @@
     </main>
 
     <script>
-        const supabaseUrl = 'https://keiydgyountsuzjybsng.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Registra o plugin de texto nas barras
+        const supabaseClient = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
         Chart.register(ChartDataLabels);
+
+        let cidadeSelecionada = null;
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
+            if (!session) window.location.href = 'index.html';
+        };
+
+        // NOVA FUNÇÃO: BUSCA DE CIDADES NA INTERNET
+        async function buscarCidades() {
+            const texto = document.getElementById('input-cidade').value.trim();
+            const divResultados = document.getElementById('resultados-busca');
+            
+            if (texto.length < 3) {
+                divResultados.classList.add('hidden');
+                divResultados.innerHTML = '';
                 return;
             }
-        };
+
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${texto}&count=5&language=pt&format=json`);
+            const data = await res.json();
+
+            divResultados.innerHTML = '';
+            if (data.results) {
+                data.results.forEach(c => {
+                    let btn = document.createElement('div');
+                    btn.className = 'item-busca p-2 cursor-pointer border-b text-gray-700 text-sm';
+                    btn.innerText = `${c.name} - ${c.admin1 || ''} (${c.country_code})`;
+                    btn.onclick = () => selecionarCidade(c);
+                    divResultados.appendChild(btn);
+                });
+                divResultados.classList.remove('hidden');
+            } else {
+                divResultados.classList.add('hidden');
+            }
+        }
+
+        function selecionarCidade(c) {
+            cidadeSelecionada = { lat: c.latitude, lon: c.longitude, nome: c.name };
+            document.getElementById('input-cidade').value = `${c.name} - ${c.admin1 || ''}`;
+            document.getElementById('resultados-busca').classList.add('hidden');
+        }
 
         function formatarDataLabel(dataStr) {
             const partes = dataStr.split('-');
@@ -114,17 +138,13 @@
         }
 
         async function buscarDados() {
-            const select = document.getElementById('select-cidade');
-            const cidadeValue = select.value;
-            
-            if (!cidadeValue) {
-                alert("Selecione um município.");
+            if (!cidadeSelecionada) {
+                alert("Digite e selecione uma cidade na lista de busca.");
                 return;
             }
 
-            const coords = JSON.parse(cidadeValue);
-            const lat = coords.lat;
-            const lon = coords.lon;
+            const lat = cidadeSelecionada.lat;
+            const lon = cidadeSelecionada.lon;
 
             const status = document.getElementById('status-chuva');
             status.classList.remove('hidden');
@@ -138,53 +158,44 @@
                 const inicio = formatarData(dataInicio12Meses);
                 const fim = formatarData(dataFim);
 
-                // 1. Busca Histórico (12 meses)
                 const urlHistorico = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${inicio}&end_date=${fim}&daily=precipitation_sum&timezone=America/Sao_Paulo`;
                 const resHist = await fetch(urlHistorico);
                 const dataHist = await resHist.json();
 
-                // 2. Busca Previsão (15 dias)
                 const urlPrevisao = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America/Sao_Paulo&forecast_days=15`;
                 const resPrev = await fetch(urlPrevisao);
                 const dataPrev = await resPrev.json();
 
                 if (dataHist && dataHist.daily && dataPrev && dataPrev.daily) {
                     
-                    // Processa Histórico
                     const todasDatas = dataHist.daily.time;
                     const todaChuva = dataHist.daily.precipitation_sum.map(v => v === null ? 0 : v);
-
-                    // Processa Previsão
                     const datasPrev = dataPrev.daily.time;
                     const chuvaPrev = dataPrev.daily.precipitation_sum.map(v => v === null ? 0 : v);
 
-                    // Calcula Totais
                     const total15 = todaChuva.slice(-15).reduce((a, b) => a + b, 0);
                     const total3 = todaChuva.slice(-90).reduce((a, b) => a + b, 0);
                     const totalPrev = chuvaPrev.reduce((a, b) => a + b, 0);
 
-                    // Atualiza Etiquetas
                     document.getElementById('total-previsao').innerText = totalPrev.toFixed(1) + " mm";
                     document.getElementById('total-15').innerText = total15.toFixed(1) + " mm";
                     document.getElementById('total-3meses').innerText = total3.toFixed(1) + " mm";
                     status.classList.add('hidden');
 
-                    // Formata datas para DD/MM
                     const datas15Fmt = todasDatas.slice(-15).map(formatarDataLabel);
                     const datas3Fmt = todasDatas.slice(-90).map(formatarDataLabel);
                     const datasPrevFmt = datasPrev.map(formatarDataLabel);
 
-                    // Lógica Nova: Agrupar 12 meses por Mês
+                    // Lógica: Agrupar 12 meses por Mês e Ano
                     const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                     let monthlyData = {};
                     for (let i = 0; i < todasDatas.length; i++) {
-                        let ym = todasDatas[i].substring(0, 7); // "2023-05"
+                        let ym = todasDatas[i].substring(0, 7);
                         let val = todaChuva[i] === null ? 0 : todaChuva[i];
                         if (!monthlyData[ym]) monthlyData[ym] = 0;
                         monthlyData[ym] += val;
                     }
 
-                    // Montar arrays para os últimos 12 meses
                     let datas12Fmt = [];
                     let chuva12 = [];
                     let hoje = new Date();
@@ -193,7 +204,8 @@
                     for (let i = 11; i >= 0; i--) {
                         let d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
                         let ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        datas12Fmt.push(mesesNomes[d.getMonth()]);
+                        let ano2 = String(d.getFullYear()).substring(2); // Pega "26" de 2026
+                        datas12Fmt.push(`${mesesNomes[d.getMonth()]}/${ano2}`); // Formato: Jan/26
                         let valMes = monthlyData[ym] || 0;
                         chuva12.push(valMes);
                         total12 += valMes;
@@ -205,7 +217,8 @@
                     desenharGrafico('graficoPrevisao', datasPrevFmt, chuvaPrev, 'bar', 'rgba(59, 130, 246, 0.7)', true);
                     desenharGrafico('grafico15dias', datas15Fmt, todaChuva.slice(-15), 'bar', 'rgba(54, 162, 235, 0.7)', true);
                     desenharGrafico('grafico3meses', datas3Fmt, todaChuva.slice(-90), 'bar', 'rgba(75, 192, 192, 0.7)', false);
-                    desenharGrafico('grafico12meses', datas12Fmt, chuva12, 'bar', 'rgba(26, 71, 42, 0.8)', true);
+                    // Gráfico de 12 meses agora AZUL e com labels de Mês/Ano
+                    desenharGrafico('grafico12meses', datas12Fmt, chuva12, 'bar', 'rgba(54, 162, 235, 0.7)', true);
 
                 } else {
                     status.innerText = "Não foi possível obter dados para este município.";
@@ -217,11 +230,8 @@
 
         function desenharGrafico(canvasId, labels, dados, tipo, cor, mostrarValores) {
             const ctx = document.getElementById(canvasId).getContext('2d');
-            
             let graficoExistente = Chart.getChart(canvasId);
-            if (graficoExistente) {
-                graficoExistente.destroy();
-            }
+            if (graficoExistente) graficoExistente.destroy();
 
             new Chart(ctx, {
                 type: tipo,
@@ -239,19 +249,10 @@
                     responsive: true,
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Chuva: ${context.raw.toFixed(1)} mm`;
-                                }
-                            }
-                        },
+                        tooltip: { callbacks: { label: (c) => `Chuva: ${c.raw.toFixed(1)} mm` } },
                         datalabels: {
-                            display: mostrarValores,
-                            align: 'end',
-                            anchor: 'end',
-                            color: '#333',
-                            font: { weight: 'bold', size: 10 },
+                            display: mostrarValores, align: 'end', anchor: 'end',
+                            color: '#333', font: { weight: 'bold', size: 10 },
                             formatter: (value) => value > 0 ? value.toFixed(0) : ''
                         }
                     },
