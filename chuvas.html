@@ -33,7 +33,7 @@
         
         <!-- Card de Seleção -->
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico e Previsão de Chuvas</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico de Chuvas</h2>
             <div class="flex flex-col gap-4">
                 <select id="select-cidade" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
                     <option value="">-- Selecione o Município --</option>
@@ -50,6 +50,7 @@
             </div>
         </div>
 
+        <!-- Status de Carregamento -->
         <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50 mb-6">Processando...</div>
 
         <!-- Gráficos -->
@@ -79,7 +80,7 @@
 
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-700">Últimos 12 Meses (Tendência)</h3>
+                <h3 class="text-lg font-bold text-gray-700">Acumulado por Mês (Últimos 12 Meses)</h3>
                 <span id="total-12meses" class="bg-green-100 text-green-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
             </div>
             <canvas id="grafico12meses" height="100"></canvas>
@@ -160,27 +161,51 @@
                     // Calcula Totais
                     const total15 = todaChuva.slice(-15).reduce((a, b) => a + b, 0);
                     const total3 = todaChuva.slice(-90).reduce((a, b) => a + b, 0);
-                    const total12 = todaChuva.reduce((a, b) => a + b, 0);
                     const totalPrev = chuvaPrev.reduce((a, b) => a + b, 0);
 
                     // Atualiza Etiquetas
                     document.getElementById('total-previsao').innerText = totalPrev.toFixed(1) + " mm";
                     document.getElementById('total-15').innerText = total15.toFixed(1) + " mm";
                     document.getElementById('total-3meses').innerText = total3.toFixed(1) + " mm";
-                    document.getElementById('total-12meses').innerText = total12.toFixed(1) + " mm";
                     status.classList.add('hidden');
 
                     // Formata datas para DD/MM
                     const datas15Fmt = todasDatas.slice(-15).map(formatarDataLabel);
                     const datas3Fmt = todasDatas.slice(-90).map(formatarDataLabel);
-                    const datas12Fmt = todasDatas.map(formatarDataLabel);
                     const datasPrevFmt = datasPrev.map(formatarDataLabel);
+
+                    // Lógica Nova: Agrupar 12 meses por Mês
+                    const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                    let monthlyData = {};
+                    for (let i = 0; i < todasDatas.length; i++) {
+                        let ym = todasDatas[i].substring(0, 7); // "2023-05"
+                        let val = todaChuva[i] === null ? 0 : todaChuva[i];
+                        if (!monthlyData[ym]) monthlyData[ym] = 0;
+                        monthlyData[ym] += val;
+                    }
+
+                    // Montar arrays para os últimos 12 meses
+                    let datas12Fmt = [];
+                    let chuva12 = [];
+                    let hoje = new Date();
+                    let total12 = 0;
+                    
+                    for (let i = 11; i >= 0; i--) {
+                        let d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+                        let ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        datas12Fmt.push(mesesNomes[d.getMonth()]);
+                        let valMes = monthlyData[ym] || 0;
+                        chuva12.push(valMes);
+                        total12 += valMes;
+                    }
+
+                    document.getElementById('total-12meses').innerText = total12.toFixed(1) + " mm";
 
                     // Desenha Gráficos
                     desenharGrafico('graficoPrevisao', datasPrevFmt, chuvaPrev, 'bar', 'rgba(59, 130, 246, 0.7)', true);
                     desenharGrafico('grafico15dias', datas15Fmt, todaChuva.slice(-15), 'bar', 'rgba(54, 162, 235, 0.7)', true);
                     desenharGrafico('grafico3meses', datas3Fmt, todaChuva.slice(-90), 'bar', 'rgba(75, 192, 192, 0.7)', false);
-                    desenharGrafico('grafico12meses', datas12Fmt, todaChuva, 'line', 'rgba(26, 71, 42, 0.8)', false);
+                    desenharGrafico('grafico12meses', datas12Fmt, chuva12, 'bar', 'rgba(26, 71, 42, 0.8)', true);
 
                 } else {
                     status.innerText = "Não foi possível obter dados para este município.";
@@ -207,9 +232,7 @@
                         data: dados,
                         backgroundColor: cor,
                         borderColor: cor,
-                        borderWidth: tipo === 'line' ? 2 : 1,
-                        fill: tipo === 'line' ? true : false,
-                        tension: 0.1
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -224,22 +247,17 @@
                             }
                         },
                         datalabels: {
-                            display: mostrarValores, // Só mostra valores se for true (15 dias e Previsão)
+                            display: mostrarValores,
                             align: 'end',
                             anchor: 'end',
                             color: '#333',
                             font: { weight: 'bold', size: 10 },
-                            formatter: (value) => value > 0 ? value.toFixed(1) : ''
+                            formatter: (value) => value > 0 ? value.toFixed(0) : ''
                         }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { display: false } // Remove linhas horizontais
-                        },
-                        x: { 
-                            grid: { display: false } // Remove linhas verticais
-                        }
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
