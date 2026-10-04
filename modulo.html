@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agro Intelligence | Módulo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        html, body { height: 100%; margin: 0; }
+        .iframe-container { flex: 1; overflow: hidden; }
+        .iframe-container iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+    
+    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md flex-shrink-0">
+        <a href="dashboard.html" class="text-sm font-bold hover:text-gray-300">← Voltar ao Painel</a>
+        <div class="flex items-center gap-2">
+            <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+            <h1 class="text-lg font-bold" id="titulo-modulo">Carregando...</h1>
+        </div>
+        <div style="width: 80px;"></div>
+    </header>
+
+    <div id="status" class="text-gray-500 text-center p-4 flex-1 flex items-center justify-center">Carregando relatório...</div>
+    
+    <div id="iframe-container" class="iframe-container hidden">
+        <iframe id="iframe-modulo" title="Relatório Agro Intelligence" allowFullScreen="true"></iframe>
+    </div>
+
+    <script>
+        const sb = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+
+        window.onload = async () => {
+            const statusEl = document.getElementById('status');
+            const iframeCont = document.getElementById('iframe-container');
+            const iframe = document.getElementById('iframe-modulo');
+
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) return window.location.href = 'index.html';
+                const whatsapp = session.user.email.replace('@app.ndvi', '');
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const tipo = urlParams.get('tipo'); // qualidade, pragas, agronomico, solo
+                
+                const titulos = { 'qualidade': 'Qualidade Agrícola', 'pragas': 'Controle de Pragas', 'agronomico': 'Desenvolvimento Agronômico', 'solo': 'Análises de Solo' };
+                document.getElementById('titulo-modulo').innerText = titulos[tipo] || 'Módulo';
+
+                if (!tipo) { statusEl.innerText = 'Módulo não especificado.'; return; }
+
+                // 1. Busca o cliente_id
+                let cliId = null;
+                let { data: usuario } = await sb.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
+                if (usuario) { cliId = usuario.cliente_id; } 
+                else {
+                    let { data: cli } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                    if (cli) cliId = cli.id;
+                }
+
+                if (!cliId) { await sb.auth.signOut(); window.location.href = 'index.html'; return; }
+
+                // 2. Busca o link e status do módulo específico
+                const colMod = `mod_${tipo}`;
+                const colLink = `link_${tipo}`;
+                const { data: cli, error } = await sb.from('clientes').select(`${colMod}, ${colLink}`).eq('id', cliId).single();
+                
+                if (error) throw error;
+
+                if (cli[colMod] === true && cli[colLink]) {
+                    iframe.src = cli[colLink];
+                    iframeCont.classList.remove('hidden');
+                    statusEl.classList.add('hidden');
+                } else if (cli[colMod] === true && !cli[colLink]) {
+                    statusEl.innerText = 'Relatório em elaboração pela nossa equipe técnica.';
+                } else {
+                    statusEl.innerText = 'Módulo bloqueado. Contate o suporte para liberar.';
+                }
+            } catch (e) {
+                statusEl.innerText = 'Erro ao carregar: ' + e.message;
+            }
+        };
+    </script>
+</body>
+</html>
