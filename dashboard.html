@@ -34,7 +34,6 @@
             <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
                 <div class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">M</div>
                 <span class="text-sm hidden md:block" id="header-nome">Marcelo</span>
-                <!-- BOTÃO SAIR ADICIONADO DE VOLTA -->
                 <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-bold ml-2">Sair</button>
             </div>
         </div>
@@ -67,14 +66,9 @@
 
         <main class="flex-1 p-6 md:p-8 overflow-y-auto">
             
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
-                    <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
-                </div>
-                <select class="border border-gray-300 rounded-lg px-4 py-2 text-gray-700 font-medium shadow-sm">
-                    <option>Safra 26/27</option>
-                </select>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
+                <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -89,11 +83,6 @@
                 <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 400px;" id="variacoes-container">
                     <p class="text-gray-400">Verificando talhões...</p>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div class="flex justify-between mb-2"><h3 class="font-bold text-gray-800">Performance da Safra Atual</h3><span class="text-sm font-bold text-[#1a472a]">72%</span></div>
-                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden"><div class="bg-gradient-to-r from-green-500 to-[#1a472a] h-4 rounded-full" style="width: 72%;"></div></div>
             </div>
 
         </main>
@@ -111,7 +100,6 @@
             if (!session) { window.location.href = 'index.html'; return; }
             const whatsapp = session.user.email.replace('@app.ndvi', '');
             
-            // 1. Busca o usuário (para pegar o nome dele) e o cliente_id
             let clienteId = null;
             let nomeUsuario = "Cliente";
             let { data: usuario } = await supabaseClient.from('usuarios').select('cliente_id, nome').eq('whatsapp', whatsapp).maybeSingle();
@@ -126,7 +114,6 @@
 
             if (!clienteId) { window.location.href = 'index.html'; return; }
 
-            // 2. Busca as permissões da empresa (cliente)
             const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('id', clienteId).single();
             
             if (cli) {
@@ -142,7 +129,6 @@
                 permissoes = cli;
                 atualizarMenuPermissoes();
                 
-                // 3. Busca os talhões da empresa
                 const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', clienteId);
                 if (talhoes) {
                     let tg=0, tp=0, ts=0;
