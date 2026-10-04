@@ -20,9 +20,8 @@
     <main class="flex-1 p-4 md:p-8 w-full max-w-6xl mx-auto">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Visão Geral da Fazenda</h2>
         <div id="status-kpi" class="text-gray-500 text-center p-4">Carregando...</div>
-        <div id="conteudo-kpi" class="hidden flex flex-col gap-8">
+        <div id="conteudo-kpi" class="hidden flex flex-col gap-6">
             
-            <!-- RESUMO DE ÁREAS -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-[#1a472a] text-white rounded-xl shadow-lg p-6 text-center">
                     <p class="text-sm uppercase opacity-80">Área Total</p>
@@ -38,13 +37,11 @@
                 </div>
             </div>
 
-            <!-- MÓDULOS DE RELATÓRIOS PREMIUM -->
             <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📂 Módulos de Análise</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="modulos-container"></div>
             </div>
 
-            <!-- ONDE O IFRAME DO MÓDULO ESCOLHIDO VAI APARECER -->
             <div id="container-modulo-iframe" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
                 <iframe id="iframe-modulo" title="Módulo Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
             </div>
@@ -67,7 +64,19 @@
                 if (!session) return window.location.href = 'index.html';
                 const whatsapp = session.user.email.replace('@app.ndvi', '');
                 
-                const { data: cli, error: errCli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('whatsapp', whatsapp).single();
+                // 1. Lógica de Múltiplos Usuários: Busca o cliente_id
+                let cliId = null;
+                let { data: usuario } = await sb.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
+                if (usuario) { cliId = usuario.cliente_id; } 
+                else {
+                    let { data: cli } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                    if (cli) cliId = cli.id;
+                }
+
+                if (!cliId) { await sb.auth.signOut(); window.location.href = 'index.html'; return; }
+
+                // 2. Busca as permissões e dados da empresa usando o cliId
+                const { data: cli, error: errCli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('id', cliId).single();
                 if (errCli) throw errCli;
                 if (!cli) throw new Error("Cliente não encontrado");
 
@@ -80,7 +89,7 @@
 
                 renderizarModulos();
 
-                // Busca apenas dados de área para o resumo
+                // 3. Busca os talhões para calcular áreas
                 const { data: talhoes, error: errT } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio').eq('cliente_id', cli.id);
                 if (errT) throw errT;
 
