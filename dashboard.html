@@ -82,10 +82,9 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-sm text-gray-500 font-medium">Talhões</p><p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p></div>
             </div>
 
-            <!-- NOVO CARD: VARIAÇÃO DE TALHÕES -->
+            <!-- CARD DE VARIAÇÃO (Limpo) -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
                 <h3 class="font-bold text-gray-800 mb-4">🚨 Variação de Vigor (Queda de Biomassa)</h3>
-                <p class="text-xs text-gray-500 mb-4">Talhões com NDVI anterior acima de 0.80 que sofreram queda superior a 20% na última imagem.</p>
                 <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 400px;" id="variacoes-container">
                     <p class="text-gray-400">Verificando talhões...</p>
                 </div>
@@ -116,7 +115,6 @@
                 const hora = new Date().getHours();
                 let saud = "Bom dia"; if (hora >= 12 && hora < 18) saud = "Boa tarde"; else if (hora >= 18) saud = "Boa noite";
                 
-                // Corrigido o bug de digitação aqui (pNome)
                 const pNome = cli.nome.split(" ")[0];
                 document.getElementById('saudacao').innerText = saud;
                 document.getElementById('nome-saudacao').innerText = pNome;
@@ -137,7 +135,6 @@
                             tg += area; if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
                         }
                         
-                        // Lógica de Alerta de Queda (Anterior >= 0.8 e caiu mais de 20%)
                         let ndvi = parseFloat(t.ndvi_medio || 0);
                         let ant = parseFloat(t.ndvi_medio_anterior || 0);
                         
@@ -155,7 +152,6 @@
                     document.getElementById('card-soca').innerText = formatBR(ts) + " ha";
                     document.getElementById('card-talhoes').innerText = talhoes.length;
 
-                    // Atualiza Card de Variações
                     const varCont = document.getElementById('variacoes-container');
                     if (alertas.length > 0) {
                         document.getElementById('alert-dot').classList.remove('hidden');
