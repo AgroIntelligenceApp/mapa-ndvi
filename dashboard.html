@@ -34,6 +34,8 @@
             <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
                 <div class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">M</div>
                 <span class="text-sm hidden md:block" id="header-nome">Marcelo</span>
+                <!-- BOTÃO SAIR ADICIONADO DE VOLTA -->
+                <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-bold ml-2">Sair</button>
             </div>
         </div>
     </header>
@@ -82,7 +84,6 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-sm text-gray-500 font-medium">Talhões</p><p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p></div>
             </div>
 
-            <!-- CARD DE VARIAÇÃO (Limpo) -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
                 <h3 class="font-bold text-gray-800 mb-4">🚨 Variação de Vigor (Queda de Biomassa)</h3>
                 <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 400px;" id="variacoes-container">
@@ -109,13 +110,30 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             const whatsapp = session.user.email.replace('@app.ndvi', '');
-            const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('whatsapp', whatsapp).single();
+            
+            // 1. Busca o usuário (para pegar o nome dele) e o cliente_id
+            let clienteId = null;
+            let nomeUsuario = "Cliente";
+            let { data: usuario } = await supabaseClient.from('usuarios').select('cliente_id, nome').eq('whatsapp', whatsapp).maybeSingle();
+            
+            if (usuario) {
+                clienteId = usuario.cliente_id;
+                nomeUsuario = usuario.nome;
+            } else {
+                let { data: cli } = await supabaseClient.from('clientes').select('id, nome').eq('whatsapp', whatsapp).maybeSingle();
+                if (cli) { clienteId = cli.id; nomeUsuario = cli.nome; }
+            }
+
+            if (!clienteId) { window.location.href = 'index.html'; return; }
+
+            // 2. Busca as permissões da empresa (cliente)
+            const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('id', clienteId).single();
             
             if (cli) {
                 const hora = new Date().getHours();
                 let saud = "Bom dia"; if (hora >= 12 && hora < 18) saud = "Boa tarde"; else if (hora >= 18) saud = "Boa noite";
                 
-                const pNome = cli.nome.split(" ")[0];
+                const pNome = nomeUsuario.split(" ")[0];
                 document.getElementById('saudacao').innerText = saud;
                 document.getElementById('nome-saudacao').innerText = pNome;
                 document.getElementById('header-nome').innerText = pNome;
@@ -124,7 +142,8 @@
                 permissoes = cli;
                 atualizarMenuPermissoes();
                 
-                const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', cli.id);
+                // 3. Busca os talhões da empresa
+                const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', clienteId);
                 if (talhoes) {
                     let tg=0, tp=0, ts=0;
                     let alertas = [];
@@ -137,7 +156,6 @@
                         
                         let ndvi = parseFloat(t.ndvi_medio || 0);
                         let ant = parseFloat(t.ndvi_medio_anterior || 0);
-                        
                         if (ant >= 0.8) {
                             let queda = (ant - ndvi) / ant;
                             if (queda >= 0.20) {
