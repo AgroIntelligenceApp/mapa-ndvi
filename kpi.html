@@ -20,8 +20,9 @@
     <main class="flex-1 p-4 md:p-8 w-full max-w-6xl mx-auto">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Visão Geral da Fazenda</h2>
         <div id="status-kpi" class="text-gray-500 text-center p-4">Carregando...</div>
-        <div id="conteudo-kpi" class="hidden flex flex-col gap-6">
+        <div id="conteudo-kpi" class="hidden flex flex-col gap-8">
             
+            <!-- RESUMO DE ÁREAS -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-[#1a472a] text-white rounded-xl shadow-lg p-6 text-center">
                     <p class="text-sm uppercase opacity-80">Área Total</p>
@@ -37,30 +38,13 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-md font-bold text-gray-700 mb-4">Indicador de Maturação</h3>
-                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Tipo</th><th class="py-2 text-xs text-right">Área</th></tr></thead><tbody id="tabela-maturacao" class="divide-y"></tbody></table>
-                </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-md font-bold text-gray-700 mb-4">Ambientes</h3>
-                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Ambiente</th><th class="py-2 text-xs text-right">Área</th></tr></thead><tbody id="tabela-ambientes" class="divide-y"></tbody></table>
-                </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-md font-bold text-gray-700 mb-4">Variedades</h3>
-                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Variedade</th><th class="py-2 text-xs text-right">Área</th></tr></thead><tbody id="tabela-variedades" class="divide-y"></tbody></table>
-                </div>
-                <div class="bg-white rounded-xl shadow-lg p-6 border">
-                    <h3 class="text-md font-bold text-gray-700 mb-4">Corte e Idade</h3>
-                    <table class="w-full text-left"><thead><tr class="border-b"><th class="py-2 text-xs">Corte</th><th class="py-2 text-xs text-right">Área</th><th class="py-2 text-xs text-right">Idade</th></tr></thead><tbody id="tabela-cortes" class="divide-y"></tbody></table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-4">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📂 Módulos de Análise Premium</h3>
+            <!-- MÓDULOS DE RELATÓRIOS PREMIUM -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📂 Módulos de Análise</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="modulos-container"></div>
             </div>
 
+            <!-- ONDE O IFRAME DO MÓDULO ESCOLHIDO VAI APARECER -->
             <div id="container-modulo-iframe" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
                 <iframe id="iframe-modulo" title="Módulo Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
             </div>
@@ -73,7 +57,6 @@
 
         function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
         function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
-        function calcIdade(d){if(!d)return "N/D";const diff=(new Date()-new Date(d+"T00:00:00"))/(1000*60*60*24*30.44);return isNaN(diff)?"N/D":Math.floor(diff)+"m";}
 
         let modulos = [];
 
@@ -97,38 +80,22 @@
 
                 renderizarModulos();
 
-                const { data: talhoes, error: errT } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cli.id);
+                // Busca apenas dados de área para o resumo
+                const { data: talhoes, error: errT } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio').eq('cliente_id', cli.id);
                 if (errT) throw errT;
 
                 if (talhoes) {
                     let tg=0, tp=0, ts=0;
-                    let mat={}, amb={}, vArr={}, cor={}; // Corrigido: var para vArr
-                    
                     talhoes.forEach(t => {
                         let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
                         if (!area) return;
                         tg += area;
                         if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
-                        
-                        let mk = t.maturacao || 'N/D'; if (!mat[mk]) mat[mk] = 0; mat[mk] += area;
-                        let ak = t.ambiente_producao || 'N/D'; if (!amb[ak]) amb[ak] = 0; amb[ak] += area;
-                        let vk = t.variedade || 'N/D'; if (!vArr[vk]) vArr[vk] = 0; vArr[vk] += area; // Corrigido
-                        
-                        let ck = `${t.numero_corte || 1}º Corte`; 
-                        if (!cor[ck]) cor[ck] = { area: 0, iSoma: 0, count: 0 }; 
-                        cor[ck].area += area;
-                        let id = calcIdade(t.tipo_plantio === 'Plantio' ? t.data_plantio : t.data_ultimo_corte);
-                        if (id !== "N/D") { cor[ck].iSoma += parseInt(id); cor[ck].count++; }
                     });
 
                     document.getElementById('total-geral').innerText = formatBR(tg) + " ha";
                     document.getElementById('total-plantio').innerText = formatBR(tp) + " ha";
                     document.getElementById('total-soca').innerText = formatBR(ts) + " ha";
-                    
-                    let h = ''; for (let k in mat) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`; document.getElementById('tabela-maturacao').innerHTML = h;
-                    h = ''; for (let k in amb) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`; document.getElementById('tabela-ambientes').innerHTML = h;
-                    h = ''; for (let k in vArr) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(vArr[k])}</td></tr>`; document.getElementById('tabela-variedades').innerHTML = h; // Corrigido
-                    h = ''; for (let k in cor) { let o = cor[k]; let id = o.count > 0 ? Math.round(o.iSoma / o.count) + "m" : "N/D"; h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`; } document.getElementById('tabela-cortes').innerHTML = h;
                     
                     document.getElementById('status-kpi').classList.add('hidden');
                     document.getElementById('conteudo-kpi').classList.remove('hidden');
