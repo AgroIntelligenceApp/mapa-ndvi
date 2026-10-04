@@ -56,16 +56,15 @@
                 </div>
             </div>
 
-            <!-- SEÇÃO DO POWER BI DINÂMICO -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📈 Relatório Dinâmico (Power BI)</h3>
-                <div id="container-powerbi" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
-                    <iframe id="iframe-powerbi" title="Relatório Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
-                </div>
-                <div id="aviso-powerbi" class="w-full text-center text-gray-500 p-8 hidden">
-                    <p class="font-bold">Relatório em elaboração.</p>
-                    <p class="text-sm">O dashboard em Power BI para este cliente está sendo preparado pela nossa equipe técnica.</p>
-                </div>
+            <!-- SEÇÃO DE MÓDULOS DE RELATÓRIOS (PAYWALL/UPSELL) -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-4">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📂 Módulos de Análise Premium</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="modulos-container"></div>
+            </div>
+
+            <!-- ONDE O IFRAME DO MÓDULO ESCOLHIDO VAI APARECER -->
+            <div id="container-modulo-iframe" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
+                <iframe id="iframe-modulo" title="Módulo Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
             </div>
 
         </div>
@@ -75,66 +74,74 @@
         const sb = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
 
         function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+        function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
+        function calcIdade(d){if(!d)return "N/D";const diff=(new Date()-new Date(d+"T00:00:00"))/(1000*60*60*24*30.44);return isNaN(diff)?"N/D":Math.floor(diff)+"m";}
 
-        function calcArea(geojson) {
-            let area = 0; const coords = geojson.coordinates[0]; const R = 6378137; 
-            for (let i = 0; i < coords.length; i++) {
-                const [lon1, lat1] = coords[i]; const [lon2, lat2] = coords[(i + 1) % coords.length];
-                area += ((lon2 - lon1) * Math.PI / 180) * (2 + Math.sin(lat1 * Math.PI / 180) + Math.sin(lat2 * Math.PI / 180));
-            }
-            return Math.abs(area * R * R / 2) / 10000; 
-        }
-
-        function calcIdade(d) { if (!d) return "N/D"; const diff = (new Date() - new Date(d + "T00:00:00")) / (1000 * 60 * 60 * 24 * 30.44); return isNaN(diff) ? "N/D" : Math.floor(diff) + "m"; }
+        let modulos = [];
 
         window.onload = async () => {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) return window.location.href = 'index.html';
             const whatsapp = session.user.email.replace('@app.ndvi', '');
             
-            // Busca agora o link do Power BI também!
-            const { data: cliente, error: errCli } = await sb.from('clientes').select('id, link_powerbi').eq('whatsapp', whatsapp).single();
-            if (!cliente) return;
+            // Busca dados do cliente (incluindo permissões e links dos módulos)
+            const { data: cli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('whatsapp', whatsapp).single();
+            if (!cli) return;
 
-            // Lógica do Power BI
-            if (cliente.link_powerbi) {
-                document.getElementById('iframe-powerbi').src = cliente.link_powerbi;
-                document.getElementById('container-powerbi').classList.remove('hidden');
-            } else {
-                document.getElementById('aviso-powerbi').classList.remove('hidden');
-            }
+            modulos = [
+                { id: 'qualidade', nome: 'Qualidade Agrícola', ativo: cli.mod_qualidade, link: cli.link_qualidade, icon: '✅' },
+                { id: 'pragas', nome: 'Controle de Pragas', ativo: cli.mod_pragas, link: cli.link_pragas, icon: '🐛' },
+                { id: 'agronomico', nome: 'Desenvolvimento Agronômico', ativo: cli.mod_agronomico, link: cli.link_agronomico, icon: '🌱' },
+                { id: 'solo', nome: 'Análises de Solo', ativo: cli.mod_solo, link: cli.link_solo, icon: '🧪' }
+            ];
 
-            const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cliente.id);
+            renderizarModulos();
+
+            const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cli.id);
 
             if (talhoes) {
-                let totalGeral = 0, totalPlantio = 0, totalSoca = 0;
-                let maturacoes = {}, ambientes = {}, variedades = {}, cortes = {};
-
-                talhoes.forEach(t => {
-                    let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
-                    if (!area) return;
-                    totalGeral += area;
-                    if (t.tipo_plantio === 'Plantio') totalPlantio += area; else totalSoca += area;
-
-                    let mKey = t.maturacao || 'N/D'; if (!maturacoes[mKey]) maturacoes[mKey] = 0; maturacoes[mKey] += area;
-                    let aKey = t.ambiente_producao || 'N/D'; if (!ambientes[aKey]) ambientes[aKey] = 0; ambientes[aKey] += area;
-                    let vKey = t.variedade || 'N/D'; if (!variedades[vKey]) variedades[vKey] = 0; variedades[vKey] += area;
-                    let cKey = `${t.numero_corte || 1}º Corte`; if (!cortes[cKey]) cortes[cKey] = { area: 0, idadeSoma: 0, count: 0 }; cortes[cKey].area += area;
-                    let idade = calcIdade(t.tipo_plantio === 'Plantio' ? t.data_plantio : t.data_ultimo_corte); if (idade !== "N/D") { cortes[cKey].idadeSoma += parseInt(idade); cortes[cKey].count++; }
-                });
-
-                document.getElementById('total-geral').innerText = formatBR(totalGeral) + " ha";
-                document.getElementById('total-plantio').innerText = formatBR(totalPlantio) + " ha";
-                document.getElementById('total-soca').innerText = formatBR(totalSoca) + " ha";
-
-                let html = ''; for (let k in maturacoes) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(maturacoes[k])}</td></tr>`; document.getElementById('tabela-maturacao').innerHTML = html;
-                html = ''; for (let k in ambientes) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(ambientes[k])}</td></tr>`; document.getElementById('tabela-ambientes').innerHTML = html;
-                html = ''; for (let k in variedades) html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(variedades[k])}</td></tr>`; document.getElementById('tabela-variedades').innerHTML = html;
-                html = ''; for (let k in cortes) { let o = cortes[k]; let id = o.count > 0 ? Math.round(o.idadeSoma / o.count) + "m" : "N/D"; html += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`; } document.getElementById('tabela-cortes').innerHTML = html;
-
+                let tg=0,tp=0,ts=0;let mat={},amb={},var={},cor={};
+                talhoes.forEach(t=>{let area=t.area_hectares||(t.geom?calcArea(typeof t.geom==='string'?JSON.parse(t.geom):t.geom):0);if(!area)return;tg+=area;if(t.tipo_plantio==='Plantio')tp+=area;else ts+=area;let mk=t.maturacao||'N/D';if(!mat[mk])mat[mk]=0;mat[mk]+=area;let ak=t.ambiente_producao||'N/D';if(!amb[ak])amb[ak]=0;amb[ak]+=area;let vk=t.variedade||'N/D';if(!var[vk])var[vk]=0;var[vk]+=area;let ck=`${t.numero_corte||1}º Corte`;if(!cor[ck])cor[ck]={area:0,iSoma:0,count:0};cor[ck].area+=area;let id=calcIdade(t.tipo_plantio==='Plantio'?t.data_plantio:t.data_ultimo_corte);if(id!=="N/D"){cor[ck].iSoma+=parseInt(id);cor[ck].count++;}});
+                document.getElementById('total-geral').innerText=formatBR(tg)+" ha";document.getElementById('total-plantio').innerText=formatBR(tp)+" ha";document.getElementById('total-soca').innerText=formatBR(ts)+" ha";
+                let h='';for(let k in mat)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`;document.getElementById('tabela-maturacao').innerHTML=h;
+                h='';for(let k in amb)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`;document.getElementById('tabela-ambientes').innerHTML=h;
+                h='';for(let k in var)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(var[k])}</td></tr>`;document.getElementById('tabela-variedades').innerHTML=h;
+                h='';for(let k in cor){let o=cor[k];let id=o.count>0?Math.round(o.iSoma/o.count)+"m":"N/D";h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`;}document.getElementById('tabela-cortes').innerHTML=h;
                 document.getElementById('status-kpi').classList.add('hidden');
                 document.getElementById('conteudo-kpi').classList.remove('hidden');
-            } else { document.getElementById('status-kpi').innerText = "Nenhum talhão."; }
+            }
+        };
+
+        function renderizarModulos() {
+            const cont = document.getElementById('modulos-container');
+            cont.innerHTML = '';
+            modulos.forEach(m => {
+                const cardClass = m.ativo ? 'bg-white border-green-500 cursor-pointer hover:shadow-lg' : 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60';
+                const lockIcon = m.ativo ? '' : '🔒';
+                cont.innerHTML += `
+                    <div class="${cardClass} border-2 rounded-xl p-4 text-center transition-all" onclick="abrirModulo('${m.id}')">
+                        <div class="text-3xl mb-2">${m.icon} <span class="text-sm">${lockIcon}</span></div>
+                        <h4 class="text-sm font-bold text-gray-700">${m.nome}</h4>
+                        ${!m.ativo ? '<p class="text-xs text-red-500 mt-1 font-bold">Bloqueado</p><p class="text-[10px] text-gray-500">Contate o suporte</p>' : '<p class="text-xs text-green-600 mt-1 font-bold">Liberado</p>'}
+                    </div>
+                `;
+            });
+        }
+
+        window.abrirModulo = (id) => {
+            const mod = modulos.find(m => m.id === id);
+            if (!mod.ativo) {
+                alert('Módulo Bloqueado! Contate o suporte da Agro Intelligence para contratar este serviço.');
+                return;
+            }
+            if (!mod.link) {
+                alert('Relatório em elaboração pela nossa equipe técnica.');
+                return;
+            }
+            document.getElementById('iframe-modulo').src = mod.link;
+            document.getElementById('container-modulo-iframe').classList.remove('hidden');
+            // Rola a tela até o iframe
+            document.getElementById('container-modulo-iframe').scrollIntoView({ behavior: 'smooth' });
         };
     </script>
 </body>
