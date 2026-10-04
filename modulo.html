@@ -2,85 +2,196 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agro Intelligence | Módulo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro Intelligence | Painel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        html, body { height: 100%; margin: 0; }
-        .iframe-container { flex: 1; overflow: hidden; }
-        .iframe-container iframe { width: 100%; height: 100%; border: none; }
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-decoration: none; }
+        .menu-item:hover { background-color: #f0f0f0; }
+        .menu-item.locked { color: #9ca3af; cursor: not-allowed; }
+        .menu-item.active { background-color: #2d8659; color: white; }
+        .menu-category-title { font-size: 11px; text-transform: uppercase; color: #6b7280; margin-top: 15px; margin-bottom: 5px; padding-left: 5px; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col">
+<body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md flex-shrink-0">
-        <a href="dashboard.html" class="text-sm font-bold hover:text-gray-300">← Voltar ao Painel</a>
-        <div class="flex items-center gap-2">
-            <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
-            <h1 class="text-lg font-bold" id="titulo-modulo">Carregando...</h1>
+    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-20">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="hover:bg-white/10 p-2 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+                <h1 class="text-lg font-bold hidden md:block">Agro Intelligence</h1>
+            </div>
         </div>
-        <div style="width: 80px;"></div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
+                <div id="user-avatar" class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold"></div>
+                <span class="text-sm hidden md:block" id="header-nome">Carregando...</span>
+                <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-bold ml-2">Sair</button>
+            </div>
+        </div>
     </header>
 
-    <div id="status" class="text-gray-500 text-center p-4 flex-1 flex items-center justify-center">Carregando relatório...</div>
-    
-    <div id="iframe-container" class="iframe-container hidden">
-        <iframe id="iframe-modulo" title="Relatório Agro Intelligence" allowFullScreen="true"></iframe>
+    <div class="flex flex-1 overflow-hidden">
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col overflow-y-auto transition-all duration-300 md:translate-x-0 -translate-x-full fixed md:relative h-full z-10">
+            <div class="p-4">
+                <div class="border-b pb-2 mb-2"><h2 class="text-md font-bold text-gray-800" id="nome-cliente">Carregando...</h2></div>
+                <div class="menu-category-title">Principal</div>
+                <a href="dashboard.html" class="menu-item active">🏠 Visão Geral</a>
+                <a href="index.html?view=map&mode=limites" class="menu-item">🗺️ Mapas</a>
+                <div class="menu-category-title">Agronomia</div>
+                <div id="menu-dev" class="menu-item locked" onclick="checkLock('agronomico')">🌱 Desenvolvimento 🔒</div>
+                <div id="menu-pragas" class="menu-item locked" onclick="checkLock('pragas')">🐛 Pragas & Doenças 🔒</div>
+                <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Análise de Solo 🔒</div>
+                <div class="menu-category-title">Monitoramento</div>
+                <a href="index.html?view=map&mode=ndvi" class="menu-item">🛰️ NDVI</a>
+                <a href="chuvas.html" class="menu-item">🌧️ Clima & Chuva</a>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🚜 Operações 🔒</div>
+                <div class="menu-category-title">Gestão</div>
+                <a href="kpi.html" class="menu-item">📊 Indicadores</a>
+                <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
+                <div class="menu-category-title">Sistema</div>
+                <a href="configuracoes.html" class="menu-item">⚙️ Configurações</a>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
+                <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-[#1a472a]"><p class="text-sm text-gray-500 font-medium">Área Total</p><p class="text-2xl font-bold text-gray-800 mt-1" id="card-area">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500"><p class="text-sm text-gray-500 font-medium">Área Plantio</p><p class="text-2xl font-bold text-blue-600 mt-1" id="card-plantio">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500"><p class="text-sm text-gray-500 font-medium">Área Soca</p><p class="text-2xl font-bold text-green-600 mt-1" id="card-soca">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-sm text-gray-500 font-medium">Talhões</p><p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p></div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+                <h3 class="font-bold text-gray-800 mb-4">🚨 Variação de Vigor (Queda de Biomassa)</h3>
+                <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 400px;" id="variacoes-container">
+                    <p class="text-gray-400">Verificando talhões...</p>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        const sb = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+        const supabaseClient = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+        let permissoes = {};
+
+        function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
+        function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 
         window.onload = async () => {
-            const statusEl = document.getElementById('status');
-            const iframeCont = document.getElementById('iframe-container');
-            const iframe = document.getElementById('iframe-modulo');
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            const whatsapp = session.user.email.replace('@app.ndvi', '');
+            
+            let clienteId = null;
+            let nomeUsuario = "Cliente";
+            let { data: usuario } = await supabaseClient.from('usuarios').select('cliente_id, nome').eq('whatsapp', whatsapp).maybeSingle();
+            
+            if (usuario) {
+                clienteId = usuario.cliente_id;
+                nomeUsuario = usuario.nome;
+            } else {
+                let { data: cli } = await supabaseClient.from('clientes').select('id, nome').eq('whatsapp', whatsapp).maybeSingle();
+                if (cli) { clienteId = cli.id; nomeUsuario = cli.nome; }
+            }
 
-            try {
-                const { data: { session } } = await sb.auth.getSession();
-                if (!session) return window.location.href = 'index.html';
-                const whatsapp = session.user.email.replace('@app.ndvi', '');
+            if (!clienteId) { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; return; }
+
+            const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('id', clienteId).single();
+            
+            if (cli) {
+                const hora = new Date().getHours();
+                let saud = "Bom dia"; if (hora >= 12 && hora < 18) saud = "Boa tarde"; else if (hora >= 18) saud = "Boa noite";
                 
-                const urlParams = new URLSearchParams(window.location.search);
-                const tipo = urlParams.get('tipo'); // qualidade, pragas, agronomico, solo
+                const pNome = nomeUsuario.split(" ")[0];
+                document.getElementById('saudacao').innerText = saud;
+                document.getElementById('nome-saudacao').innerText = pNome;
+                document.getElementById('header-nome').innerText = pNome;
+                document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
+                document.getElementById('user-avatar').innerText = pNome.charAt(0).toUpperCase();
+
+                permissoes = cli;
+                atualizarMenuPermissoes();
                 
-                const titulos = { 'qualidade': 'Qualidade Agrícola', 'pragas': 'Controle de Pragas', 'agronomico': 'Desenvolvimento Agronômico', 'solo': 'Análises de Solo' };
-                document.getElementById('titulo-modulo').innerText = titulos[tipo] || 'Módulo';
+                const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', clienteId);
+                if (talhoes) {
+                    let tg=0, tp=0, ts=0;
+                    let alertas = [];
+                    
+                    talhoes.forEach(t => {
+                        let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
+                        if (area) {
+                            tg += area; if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
+                        }
+                        
+                        let ndvi = parseFloat(t.ndvi_medio || 0);
+                        let ant = parseFloat(t.ndvi_medio_anterior || 0);
+                        if (ant > 0) {
+                            let queda = (ant - ndvi) / ant;
+                            if (queda >= 0.20) {
+                                let nomeT = t.codigo_bloco ? `${t.codigo_bloco}-${t.codigo_talhao}` : t.codigo_talhao;
+                                alertas.push({ nome: nomeT, ant: ant, atual: ndvi, queda: (queda * 100).toFixed(0) });
+                            }
+                        }
+                    });
 
-                if (!tipo) { statusEl.innerText = 'Módulo não especificado.'; return; }
+                    document.getElementById('card-area').innerText = formatBR(tg) + " ha";
+                    document.getElementById('card-plantio').innerText = formatBR(tp) + " ha";
+                    document.getElementById('card-soca').innerText = formatBR(ts) + " ha";
+                    document.getElementById('card-talhoes').innerText = talhoes.length;
 
-                // 1. Busca o cliente_id
-                let cliId = null;
-                let { data: usuario } = await sb.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
-                if (usuario) { cliId = usuario.cliente_id; } 
-                else {
-                    let { data: cli } = await sb.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
-                    if (cli) cliId = cli.id;
+                    const varCont = document.getElementById('variacoes-container');
+                    if (alertas.length > 0) {
+                        varCont.innerHTML = alertas.map(a => `
+                            <div class="flex items-start gap-3 text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                                <span class="text-xl">🚨</span>
+                                <div>
+                                    <p class="font-bold text-gray-800">Talhão ${a.nome}</p>
+                                    <p class="text-xs text-red-500 mt-1">Queda de ${a.queda}% no vigor (De ${a.ant.toFixed(2)} para ${a.atual.toFixed(2)}). Verifique pragas, falhas ou déficit hídrico.</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        varCont.innerHTML = `
+                            <div class="flex items-start gap-3 text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
+                                <span class="text-xl">✅</span>
+                                <div>
+                                    <p class="font-bold text-gray-800">Nenhum alerta de variação</p>
+                                    <p class="text-xs text-green-500 mt-1">Nenhum talhão sofreu queda brusca de biomassa. Tudo sob controle.</p>
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
-
-                if (!cliId) { await sb.auth.signOut(); window.location.href = 'index.html'; return; }
-
-                // 2. Busca o link e status do módulo específico
-                const colMod = `mod_${tipo}`;
-                const colLink = `link_${tipo}`;
-                const { data: cli, error } = await sb.from('clientes').select(`${colMod}, ${colLink}`).eq('id', cliId).single();
-                
-                if (error) throw error;
-
-                if (cli[colMod] === true && cli[colLink]) {
-                    iframe.src = cli[colLink];
-                    iframeCont.classList.remove('hidden');
-                    statusEl.classList.add('hidden');
-                } else if (cli[colMod] === true && !cli[colLink]) {
-                    statusEl.innerText = 'Relatório em elaboração pela nossa equipe técnica.';
-                } else {
-                    statusEl.innerText = 'Módulo bloqueado. Contate o suporte para liberar.';
-                }
-            } catch (e) {
-                statusEl.innerText = 'Erro ao carregar: ' + e.message;
             }
         };
+
+        function atualizarMenuPermissoes() {
+            const mapaModulos = { 'qualidade': 'mod_qualidade', 'pragas': 'mod_pragas', 'agronomico': 'mod_agronomico', 'solo': 'mod_solo' };
+            for (const key in mapaModulos) {
+                const dbCol = mapaModulos[key];
+                const menuItem = document.getElementById('menu-' + key);
+                if (menuItem && permissoes[dbCol] === true) {
+                    menuItem.classList.remove('locked');
+                    menuItem.innerHTML = menuItem.textContent.replace(' 🔒', ' ✅');
+                    menuItem.style.color = '#1a472a';
+                    menuItem.onclick = () => window.location.href = `modulo.html?tipo=${key}`;
+                }
+            }
+        }
+        function checkLock(modulo) { alert('Módulo Bloqueado! Contate o suporte para liberar.'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
+        async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
 </body>
 </html>
