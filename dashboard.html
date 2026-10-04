@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; text-decoration: none; }
         .menu-item:hover { background-color: #f0f0f0; }
         .menu-item.locked { color: #9ca3af; cursor: not-allowed; }
         .menu-item.active { background-color: #2d8659; color: white; }
@@ -27,13 +27,11 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <button class="relative p-2 hover:bg-white/10 rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.051-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                <span class="absolute top-1 right-1 bg-red-500 h-2 w-2 rounded-full hidden" id="alert-dot"></span>
-            </button>
+            <!-- SINO REMOVIDO -->
             <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
-                <div class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">M</div>
-                <span class="text-sm hidden md:block" id="header-nome">Marcelo</span>
+                <!-- AVATAR DINÂMICO -->
+                <div id="user-avatar" class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold"></div>
+                <span class="text-sm hidden md:block" id="header-nome">Carregando...</span>
                 <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-bold ml-2">Sair</button>
             </div>
         </div>
@@ -60,7 +58,6 @@
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
                 <div class="menu-category-title">Sistema</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🔔 Alertas 🔒</div>
-                <!-- LINK LIBERADO -->
                 <a href="configuracoes.html" class="menu-item">⚙️ Configurações</a>
             </div>
         </aside>
@@ -125,6 +122,9 @@
                 document.getElementById('header-nome').innerText = pNome;
                 document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
                 
+                // AVATAR DINÂMICO (Pega a primeira letra do nome)
+                document.getElementById('user-avatar').innerText = pNome.charAt(0).toUpperCase();
+
                 permissoes = cli;
                 atualizarMenuPermissoes();
                 
@@ -139,9 +139,10 @@
                             tg += area; if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
                         }
                         
+                        // NOVA LÓGICA DE ALERTA: Independente do valor, se cair 20% gera alerta
                         let ndvi = parseFloat(t.ndvi_medio || 0);
                         let ant = parseFloat(t.ndvi_medio_anterior || 0);
-                        if (ant >= 0.8) {
+                        if (ant > 0) { // Só compara se houve imagem anterior
                             let queda = (ant - ndvi) / ant;
                             if (queda >= 0.20) {
                                 let nomeT = t.codigo_bloco ? `${t.codigo_bloco}-${t.codigo_talhao}` : t.codigo_talhao;
@@ -157,7 +158,6 @@
 
                     const varCont = document.getElementById('variacoes-container');
                     if (alertas.length > 0) {
-                        document.getElementById('alert-dot').classList.remove('hidden');
                         varCont.innerHTML = alertas.map(a => `
                             <div class="flex items-start gap-3 text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
                                 <span class="text-xl">🚨</span>
