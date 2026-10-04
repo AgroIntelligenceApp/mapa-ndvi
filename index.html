@@ -47,9 +47,14 @@
         .login-box button:hover { background: #1a472a; transform: translateY(-1px); }
         .login-box button:disabled { background: #999; cursor: not-allowed; transform: none; }
         .login-box a { color: #25D366; text-decoration: none; font-weight: bold; }
-        #msg-erro-login { color: red; margin-top: 15px; font-size: 14px; min-height: 20px; }
+        #msg-erro-login { color: red; margin-top: 15px; font-size: 14px; min-height: 20px; font-weight: bold; }
         .dica-login { font-size: 12px; color: #888; margin-top: -5px; text-align: left; width: 100%; }
         .badge-seguranca { margin-top: 25px; font-size: 11px; color: #666; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        
+        /* CONTAINER DO OLHO DA SENHA */
+        .input-senha-wrap { position: relative; width: 100%; margin: 10px 0; }
+        .input-senha-wrap input { margin: 0; padding-right: 45px; }
+        .toggle-senha { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none; color: #666; }
 
         /* TELA DO APP */
         #tela-app { display: none; flex: 1; flex-direction: column; height: 100vh; height: 100dvh; }
@@ -114,12 +119,15 @@
             <h2>Agro Intelligence</h2>
             <p class="subtitulo">Plataforma de Inteligência Agrícola</p>
             
-            <!-- FORM com Enter para submeter -->
             <form onsubmit="event.preventDefault(); fazerLogin();">
-                <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: (DDD)9xxxx-xxxx)" maxlength="15">
+                <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: 17997927252)" maxlength="15">
                 <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
                 
-                <input type="password" id="campo-senha" placeholder="Sua Senha" style="margin-top: 15px;">
+                <!-- CAMPO DE SENHA COM O ÍCONE DE OLHO -->
+                <div class="input-senha-wrap">
+                    <input type="password" id="campo-senha" placeholder="Sua Senha">
+                    <span class="toggle-senha" id="toggle-senha" onclick="toggleSenha()">👁️</span>
+                </div>
                 
                 <button type="submit" id="btn-entrar">Entrar</button>
             </form>
@@ -130,7 +138,6 @@
                 <a href="https://wa.me/5517997927252?text=Olá, preciso de ajuda com meu acesso na Agro Intelligence." target="_blank">Fale com o Suporte</a>
             </p>
             
-            <!-- BADGE DE SEGURANÇA -->
             <div class="badge-seguranca">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 Conexão Segura (SSL)
@@ -202,6 +209,19 @@
         function abrirListaMobile() { document.getElementById('painel-lateral').classList.add('aberto'); document.getElementById('overlay-mobile').classList.add('visivel'); }
         function fecharListaMobile() { document.getElementById('painel-lateral').classList.remove('aberto'); document.getElementById('overlay-mobile').classList.remove('visivel'); }
 
+        // FUNÇÃO PARA MOSTRAR/ESCONDER SENHA
+        function toggleSenha() {
+            const input = document.getElementById('campo-senha');
+            const icon = document.getElementById('toggle-senha');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                icon.innerText = '👁️';
+            }
+        }
+
         window.onload = async () => {
             window.addEventListener('resize', () => { isMobile = window.innerWidth <= 768; });
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -234,10 +254,11 @@
             const whatsappFormatado = padronizarWhatsapp(document.getElementById('campo-whatsapp').value);
             const senha = document.getElementById('campo-senha').value;
 
-            if (whatsappFormatado.length < 11) { msgErro.innerText = "Digite um número válido (DDD + Número)."; msgErro.style.color = "red"; return; }
-            if (!senha) { msgErro.innerText = "Digite sua senha."; msgErro.style.color = "red"; return; }
+            if (whatsappFormatado.length < 11) { msgErro.innerText = "❌ Digite um número válido."; return; }
+            if (!senha) { msgErro.innerText = "❌ Digite sua senha."; return; }
 
-            btn.disabled = true; btn.innerText = "Verificando...";
+            btn.disabled = true; 
+            btn.innerText = "⏳ Entrando...";
             msgErro.innerText = ""; 
 
             const emailFake = whatsappFormatado + "@app.ndvi"; 
@@ -247,17 +268,17 @@
                 if (error) throw error;
                 window.location.href = 'dashboard.html';
             } catch (error) {
-                msgErro.style.color = "red";
-                msgErro.innerText = error.message.includes("Invalid login") ? "Número ou senha incorretos." : "Erro: " + error.message;
-                btn.disabled = false; btn.innerText = "Entrar";
+                msgErro.innerText = "❌ WhatsApp ou senha incorretos.";
+                btn.disabled = false; 
+                btn.innerText = "Entrar";
             }
         }
 
         async function validarAcessoELoadar(whatsapp) {
             const msgErro = document.getElementById('msg-erro-login');
             const { data: cliente, error: dbError } = await supabaseClient.from('clientes').select('id, ativo').eq('whatsapp', whatsapp).single();
-            if (dbError || !cliente) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.style.color = "red"; msgErro.innerText = "Usuário não encontrado na base de dados."; return; }
-            if (cliente.ativo === false) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.style.color = "red"; msgErro.innerText = "⚠️ ACESSO BLOQUEADO. Plano expirado. Contate o suporte."; return; }
+            if (dbError || !cliente) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.innerText = "❌ Usuário não encontrado."; return; }
+            if (cliente.ativo === false) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.innerText = "⚠️ ACESSO BLOQUEADO. Plano expirado."; return; }
             
             clienteId = cliente.id; msgErro.innerText = ""; mostrarTela('app'); buscarTalhoes();
         }
