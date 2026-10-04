@@ -40,15 +40,14 @@
                 <div class="menu-category-title">Principal</div>
                 <a href="dashboard.html" class="menu-item">🏠 Visão Geral</a>
                 <a href="index.html?view=map&mode=limites" class="menu-item">🗺️ Mapas</a>
-                <div class="menu-category-title">Agronomia</div>
+                <div class="menu-category-title">Agronômico</div>
                 <div id="menu-dev" class="menu-item" onclick="window.location.href='modulo.html?tipo=agronomico'">🌱 Desenvolvimento</div>
                 <div id="menu-pragas" class="menu-item" onclick="window.location.href='modulo.html?tipo=pragas'">🐛 Pragas & Doenças</div>
                 <div id="menu-solo" class="menu-item" onclick="window.location.href='modulo.html?tipo=solo'">🧪 Análise de Solo</div>
-                <div id="menu-qualidade" class="menu-item" onclick="window.location.href='modulo.html?tipo=qualidade'">📈 Agronômico</div>
+                <div id="menu-qualidade" class="menu-item" onclick="window.location.href='modulo.html?tipo=qualidade'">📈 Qualidade</div>
                 <div class="menu-category-title">Monitoramento</div>
                 <a href="index.html?view=map&mode=ndvi" class="menu-item">🛰️ NDVI</a>
                 <a href="chuvas.html" class="menu-item">🌧️ Clima & Chuva</a>
-                <div class="menu-category-title">Gestão</div>
                 <a href="kpi.html" class="menu-item">📊 Indicadores</a>
                 <div class="menu-category-title">Sistema</div>
                 <a href="configuracoes.html" class="menu-item">⚙️ Configurações</a>
@@ -80,7 +79,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const tipo = urlParams.get('tipo');
                 
-                const titulos = { 'qualidade': 'Agronômico', 'pragas': 'Controle de Pragas', 'agronomico': 'Desenvolvimento Agronômico', 'solo': 'Análise de Solo' };
+                const titulos = { 'qualidade': 'Qualidade', 'pragas': 'Controle de Pragas', 'agronomico': 'Desenvolvimento Agronômico', 'solo': 'Análise de Solo' };
                 document.getElementById('titulo-modulo').innerText = titulos[tipo] || 'Módulo';
 
                 const menuAtivo = document.getElementById('menu-' + tipo);
