@@ -16,16 +16,28 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <!-- HEADER -->
+    <!-- HEADER TOPO -->
     <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-20">
-        <button onclick="toggleSidebar()" class="text-white hover:bg-white/10 p-2 rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
-        <div class="flex items-center gap-2">
-            <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
-            <h1 class="text-lg font-bold">Agro Intelligence</h1>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="hover:bg-white/10 p-2 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+                <h1 class="text-lg font-bold hidden md:block">Agro Intelligence</h1>
+            </div>
         </div>
-        <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm">Sair</button>
+        
+        <div class="flex items-center gap-4">
+            <button class="relative p-2 hover:bg-white/10 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.051-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                <span class="absolute top-1 right-1 bg-red-500 h-2 w-2 rounded-full"></span>
+            </button>
+            <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
+                <div class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">M</div>
+                <span class="text-sm hidden md:block" id="header-nome">Marcelo</span>
+            </div>
+        </div>
     </header>
 
     <!-- LAYOUT FLEXÍVEL (SIDEBAR + CONTEÚDO) -->
@@ -53,47 +65,96 @@
                 <div class="menu-category-title">Monitoramento</div>
                 <a href="index.html?view=map" class="menu-item">🛰️ NDVI</a>
                 <a href="chuvas.html" class="menu-item">🌧️ Clima</a>
-                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">🚜 Operações 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🚜 Operações 🔒</div>
 
                 <!-- GESTÃO -->
                 <div class="menu-category-title">Gestão</div>
                 <a href="kpi.html" class="menu-item">📊 Indicadores</a>
                 <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
-                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">📑 Relatórios 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
 
                 <!-- SISTEMA -->
                 <div class="menu-category-title">Sistema</div>
-                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">🔔 Alertas 🔒</div>
-                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">⚙️ Configurações 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🔔 Alertas 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">⚙️ Configurações 🔒</div>
             </div>
         </aside>
 
         <!-- CONTEÚDO PRINCIPAL -->
-        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
-            <div class="text-center mb-10">
-                <h2 class="text-2xl font-bold text-gray-800">Bem-vindo!</h2>
-                <p class="text-gray-600 font-medium" id="sub-nome">Carregando fazenda...</p>
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            
+            <!-- CABEÇALHO DE SAUDAÇÃO E SAFRA -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
+                    <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
+                </div>
+                <select class="border border-gray-300 rounded-lg px-4 py-2 text-gray-700 font-medium shadow-sm">
+                    <option>Safra 26/27</option>
+                    <option>Safra 25/26</option>
+                </select>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-                <a href="index.html?view=map" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                    <div class="text-5xl mb-4">🛰️</div>
-                    <h3 class="text-xl font-bold text-gray-800">Mapa NDVI</h3>
-                    <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade.</p>
-                </a>
-
-                <a href="chuvas.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                    <div class="text-5xl mb-4">🌧️</div>
-                    <h3 class="text-xl font-bold text-gray-800">Dados de Chuva</h3>
-                    <p class="text-gray-500 text-sm text-center mt-2">Histórico e previsão pluviométrica.</p>
-                </a>
-
-                <a href="kpi.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                    <div class="text-5xl mb-4">📊</div>
-                    <h3 class="text-xl font-bold text-gray-800">Indicadores (KPI)</h3>
-                    <p class="text-gray-500 text-sm text-center mt-2">Áreas por estágio, corte e variedade.</p>
-                </a>
+            <!-- CARDS DE DADOS MESTRES (KPIs) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-[#1a472a]">
+                    <p class="text-sm text-gray-500 font-medium">Área Total</p>
+                    <p class="text-2xl font-bold text-gray-800 mt-1" id="card-area">0 ha</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+                    <p class="text-sm text-gray-500 font-medium">Área Plantio</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1" id="card-plantio">0 ha</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+                    <p class="text-sm text-gray-500 font-medium">Área Soca</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1" id="card-soca">0 ha</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
+                    <p class="text-sm text-gray-500 font-medium">Talhões</p>
+                    <p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p>
+                </div>
             </div>
+
+            <!-- LINHA DE GRÁFICOS E ALERTAS -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Placeholder Gráfico NDVI -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 h-80 flex flex-col items-center justify-center border border-gray-100">
+                    <div class="text-gray-300 text-5xl mb-2">📈</div>
+                    <p class="text-gray-400 font-medium">Relatório de NDVI Médio</p>
+                    <p class="text-xs text-gray-400 mt-1">Integração com Power BI carregada dinamicamente aqui.</p>
+                </div>
+                
+                <!-- Painel de Alertas -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Alertas</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-start gap-2 text-red-600">
+                            <span>⚠️</span>
+                            <p>Déficit hídrico detectado (Talhão 12).</p>
+                        </div>
+                        <div class="flex items-start gap-2 text-orange-500">
+                            <span>⚠️</span>
+                            <p>Risco de praga (Talhão 04).</p>
+                        </div>
+                        <div class="flex items-start gap-2 text-green-600">
+                            <span>✅</span>
+                            <p>Solo analisado e dentro do padrão.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BARRA DE PERFORMANCE DA SAFRA -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div class="flex justify-between mb-2">
+                    <h3 class="font-bold text-gray-800">Performance da Safra Atual</h3>
+                    <span class="text-sm font-bold text-[#1a472a]">72%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-green-500 to-[#1a472a] h-4 rounded-full flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width: 72%;">72%</div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -102,32 +163,56 @@
 
         let permissoes = {};
 
+        // Função de Cálculo de Área
+        function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
+        function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             
             const whatsapp = session.user.email.replace('@app.ndvi', '');
-            // Busca os dados do cliente, incluindo as permissões de módulos
-            const { data: cli } = await supabaseClient.from('clientes').select('nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('whatsapp', whatsapp).single();
+            const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('whatsapp', whatsapp).single();
             
             if (cli) {
+                // Saudação dinâmica
+                const hora = new Date().getHours();
+                let saud = "Bom dia";
+                if (hora >= 12 && hora < 18) saud = "Boa tarde";
+                else if (hora >= 18) saud = "Boa noite";
+                
+                const primeiroNome = cli.nome.split(" ")[0];
+                document.getElementById('saudacao').innerText = saud;
+                document.getElementById('nome-saudacao').innerText = primeiroNome;
+                document.getElementById('header-nome').innerText = primeiroNome;
                 document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
-                document.getElementById('sub-nome').innerText = "Acompanhe a sua safra na palma da mão.";
                 
                 permissoes = cli;
                 atualizarMenuPermissoes();
+                
+                // Buscar Áreas e Contagens
+                const { data: talhoes } = await supabaseClient.from('talhoes').select('geom, area_hectares, tipo_plantio').eq('cliente_id', cli.id);
+                if (talhoes) {
+                    let tg=0, tp=0, ts=0;
+                    talhoes.forEach(t => {
+                        let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
+                        if (!area) return;
+                        tg += area;
+                        if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
+                    });
+                    document.getElementById('card-area').innerText = formatBR(tg) + " ha";
+                    document.getElementById('card-plantio').innerText = formatBR(tp) + " ha";
+                    document.getElementById('card-soca').innerText = formatBR(ts) + " ha";
+                    document.getElementById('card-talhoes').innerText = talhoes.length;
+                }
             }
         };
 
         function atualizarMenuPermissoes() {
-            // Desbloqueia no menu se o cliente tiver o módulo ativado no banco
             const mapaModulos = {
-                'qualidade': 'mod_qualidade',
-                'pragas': 'mod_pragas',
-                'agronomico': 'mod_agronomico',
-                'solo': 'mod_solo'
+                'qualidade': 'mod_qualidade', 'pragas': 'mod_pragas',
+                'agronomico': 'mod_agronomico', 'solo': 'mod_solo'
             };
-
             for (const key in mapaModulos) {
                 const dbCol = mapaModulos[key];
                 const menuItem = document.getElementById('menu-' + key);
@@ -135,21 +220,13 @@
                     menuItem.classList.remove('locked');
                     menuItem.innerHTML = menuItem.textContent.replace(' 🔒', ' ✅');
                     menuItem.style.color = '#1a472a';
-                    // Se estiver liberado, muda o comportamento para ir para a tela de KPI
                     menuItem.onclick = () => window.location.href = 'kpi.html';
                 }
             }
         }
 
-        function checkLock(modulo) {
-            alert('Módulo Bloqueado! Contate o suporte da Agro Intelligence para contratar este serviço e liberar os relatórios de ' + modulo + '.');
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        }
-
+        function checkLock(modulo) { alert('Módulo Bloqueado! Contate o suporte para liberar os relatórios de ' + modulo + '.'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
 </body>
