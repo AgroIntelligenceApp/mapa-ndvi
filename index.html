@@ -154,9 +154,10 @@
                 <a href="https://wa.me/5517997927252?text=Olá, preciso de ajuda com meu acesso na Agro Intelligence." target="_blank">Fale com o Suporte</a>
             </p>
             
+            <!-- RODAPÉ COM LINKS REAIS DAS PÁGINAS -->
             <div class="footer-login">
                 <p>&copy; 2026 Agro Intelligence<br>Plataforma de Inteligência Agrícola</p>
-                <p class="links-footer"><a href="#">Termos de Uso</a> | <a href="#">Política de Privacidade</a></p>
+                <p class="links-footer"><a href="termos.html">Termos de Uso</a> | <a href="privacidade.html">Política de Privacidade</a></p>
             </div>
         </div>
     </div>
@@ -368,7 +369,7 @@
                 } catch (e) { console.error("Erro:", e); }
             });
             const grupo = L.featureGroup();
-            checkboxes.forEach(cb => { const talhao = dadosTalhoes.find(t => t.id === cb.value); if (talhao && talhao.geom) { const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom; L.geoJSON(geojson).addTo(grupo); } });
+            checkboxes.forEach(cb => { const talhao = datosTalhoes.find(t => t.id === cb.value); if (talhao && talhao.geom) { const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom; L.geoJSON(geojson).addTo(grupo); } });
             if (checkboxes.length > 0) mapa.fitBounds(grupo.getBounds().pad(0.2));
             if (datasEncontradas.size > 0) { let textosFormatados = []; datasEncontradas.forEach(data => textosFormatados.push(`${data} (${calcularDiasAtras(data)})`)); document.getElementById('barra-data').innerText = "Imagens de: " + textosFormatados.join(' | '); } else { document.getElementById('barra-data').innerText = 'Data indisponível'; }
             if (isMobile) { fecharListaMobile(); }
