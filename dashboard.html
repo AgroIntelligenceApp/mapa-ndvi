@@ -27,9 +27,7 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <!-- SINO REMOVIDO -->
             <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
-                <!-- AVATAR DINÂMICO -->
                 <div id="user-avatar" class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold"></div>
                 <span class="text-sm hidden md:block" id="header-nome">Carregando...</span>
                 <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-bold ml-2">Sair</button>
@@ -47,7 +45,7 @@
                 <div class="menu-category-title">Agronomia</div>
                 <div id="menu-dev" class="menu-item locked" onclick="checkLock('agronomico')">🌱 Desenvolvimento 🔒</div>
                 <div id="menu-pragas" class="menu-item locked" onclick="checkLock('pragas')">🐛 Pragas & Doenças 🔒</div>
-                <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Solo 🔒</div>
+                <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Análise de Solo 🔒</div>
                 <div class="menu-category-title">Monitoramento</div>
                 <a href="index.html?view=map&mode=ndvi" class="menu-item">🛰️ NDVI</a>
                 <a href="chuvas.html" class="menu-item">🌧️ Clima & Chuva</a>
@@ -57,7 +55,6 @@
                 <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
                 <div class="menu-category-title">Sistema</div>
-                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🔔 Alertas 🔒</div>
                 <a href="configuracoes.html" class="menu-item">⚙️ Configurações</a>
             </div>
         </aside>
@@ -121,8 +118,6 @@
                 document.getElementById('nome-saudacao').innerText = pNome;
                 document.getElementById('header-nome').innerText = pNome;
                 document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
-                
-                // AVATAR DINÂMICO (Pega a primeira letra do nome)
                 document.getElementById('user-avatar').innerText = pNome.charAt(0).toUpperCase();
 
                 permissoes = cli;
@@ -139,10 +134,9 @@
                             tg += area; if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
                         }
                         
-                        // NOVA LÓGICA DE ALERTA: Independente do valor, se cair 20% gera alerta
                         let ndvi = parseFloat(t.ndvi_medio || 0);
                         let ant = parseFloat(t.ndvi_medio_anterior || 0);
-                        if (ant > 0) { // Só compara se houve imagem anterior
+                        if (ant > 0) {
                             let queda = (ant - ndvi) / ant;
                             if (queda >= 0.20) {
                                 let nomeT = t.codigo_bloco ? `${t.codigo_bloco}-${t.codigo_talhao}` : t.codigo_talhao;
