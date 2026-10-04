@@ -16,7 +16,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <!-- HEADER TOPO -->
     <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-20">
         <div class="flex items-center gap-4">
             <button onclick="toggleSidebar()" class="hover:bg-white/10 p-2 rounded">
@@ -27,11 +26,10 @@
                 <h1 class="text-lg font-bold hidden md:block">Agro Intelligence</h1>
             </div>
         </div>
-        
         <div class="flex items-center gap-4">
             <button class="relative p-2 hover:bg-white/10 rounded">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.051-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                <span class="absolute top-1 right-1 bg-red-500 h-2 w-2 rounded-full"></span>
+                <span class="absolute top-1 right-1 bg-red-500 h-2 w-2 rounded-full" id="alert-dot"></span>
             </button>
             <div class="flex items-center gap-2 cursor-pointer hover:bg-white/10 p-1 rounded">
                 <div class="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">M</div>
@@ -40,50 +38,33 @@
         </div>
     </header>
 
-    <!-- LAYOUT FLEXÍVEL (SIDEBAR + CONTEÚDO) -->
     <div class="flex flex-1 overflow-hidden">
-        
-        <!-- SIDEBAR MENU -->
         <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col overflow-y-auto transition-all duration-300 md:translate-x-0 -translate-x-full fixed md:relative h-full z-10">
             <div class="p-4">
-                <div class="border-b pb-2 mb-2">
-                    <h2 class="text-md font-bold text-gray-800" id="nome-cliente">Carregando...</h2>
-                </div>
-
-                <!-- PRINCIPAL -->
+                <div class="border-b pb-2 mb-2"><h2 class="text-md font-bold text-gray-800" id="nome-cliente">Carregando...</h2></div>
                 <div class="menu-category-title">Principal</div>
                 <a href="dashboard.html" class="menu-item active">🏠 Visão Geral</a>
                 <a href="index.html?view=map" class="menu-item">🗺️ Mapas</a>
-
-                <!-- AGRONOMIA -->
                 <div class="menu-category-title">Agronomia</div>
                 <div id="menu-dev" class="menu-item locked" onclick="checkLock('agronomico')">🌱 Desenvolvimento 🔒</div>
                 <div id="menu-pragas" class="menu-item locked" onclick="checkLock('pragas')">🐛 Pragas & Doenças 🔒</div>
                 <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Solo 🔒</div>
-
-                <!-- MONITORAMENTO -->
                 <div class="menu-category-title">Monitoramento</div>
                 <a href="index.html?view=map" class="menu-item">🛰️ NDVI</a>
                 <a href="chuvas.html" class="menu-item">🌧️ Clima</a>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🚜 Operações 🔒</div>
-
-                <!-- GESTÃO -->
                 <div class="menu-category-title">Gestão</div>
                 <a href="kpi.html" class="menu-item">📊 Indicadores</a>
                 <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
-
-                <!-- SISTEMA -->
                 <div class="menu-category-title">Sistema</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🔔 Alertas 🔒</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">⚙️ Configurações 🔒</div>
             </div>
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
         <main class="flex-1 p-6 md:p-8 overflow-y-auto">
             
-            <!-- CABEÇALHO DE SAUDAÇÃO E SAFRA -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
@@ -95,64 +76,37 @@
                 </select>
             </div>
 
-            <!-- CARDS DE DADOS MESTRES (KPIs) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-[#1a472a]">
-                    <p class="text-sm text-gray-500 font-medium">Área Total</p>
-                    <p class="text-2xl font-bold text-gray-800 mt-1" id="card-area">0 ha</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
-                    <p class="text-sm text-gray-500 font-medium">Área Plantio</p>
-                    <p class="text-2xl font-bold text-blue-600 mt-1" id="card-plantio">0 ha</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
-                    <p class="text-sm text-gray-500 font-medium">Área Soca</p>
-                    <p class="text-2xl font-bold text-green-600 mt-1" id="card-soca">0 ha</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
-                    <p class="text-sm text-gray-500 font-medium">Talhões</p>
-                    <p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p>
-                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-[#1a472a]"><p class="text-sm text-gray-500 font-medium">Área Total</p><p class="text-2xl font-bold text-gray-800 mt-1" id="card-area">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500"><p class="text-sm text-gray-500 font-medium">Área Plantio</p><p class="text-2xl font-bold text-blue-600 mt-1" id="card-plantio">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500"><p class="text-sm text-gray-500 font-medium">Área Soca</p><p class="text-2xl font-bold text-green-600 mt-1" id="card-soca">0 ha</p></div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-sm text-gray-500 font-medium">Talhões</p><p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p></div>
             </div>
 
-            <!-- LINHA DE GRÁFICOS E ALERTAS -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Placeholder Gráfico NDVI -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 h-80 flex flex-col items-center justify-center border border-gray-100">
-                    <div class="text-gray-300 text-5xl mb-2">📈</div>
-                    <p class="text-gray-400 font-medium">Relatório de NDVI Médio</p>
-                    <p class="text-xs text-gray-400 mt-1">Integração com Power BI carregada dinamicamente aqui.</p>
+                <!-- CARD DE NDVI MÉDIO -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">📈 Vigor Médio da Lavoura (NDVI)</h3>
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="text-5xl font-bold text-[#1a472a]" id="ndvi-medio-geral">0.00</div>
+                    </div>
+                    <div class="space-y-2" id="ndvi-legenda-container">
+                        <!-- As barrinhas das cores serão geradas aqui via JS -->
+                    </div>
                 </div>
                 
-                <!-- Painel de Alertas -->
+                <!-- PAINEL DE ALERTAS -->
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <h3 class="font-bold text-gray-800 mb-4">Alertas</h3>
-                    <div class="space-y-3 text-sm">
-                        <div class="flex items-start gap-2 text-red-600">
-                            <span>⚠️</span>
-                            <p>Déficit hídrico detectado (Talhão 12).</p>
-                        </div>
-                        <div class="flex items-start gap-2 text-orange-500">
-                            <span>⚠️</span>
-                            <p>Risco de praga (Talhão 04).</p>
-                        </div>
-                        <div class="flex items-start gap-2 text-green-600">
-                            <span>✅</span>
-                            <p>Solo analisado e dentro do padrão.</p>
-                        </div>
+                    <h3 class="font-bold text-gray-800 mb-4">⚠️ Alertas Críticos</h3>
+                    <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 300px;" id="alertas-container">
+                        <p class="text-gray-400">Verificando talhões...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- BARRA DE PERFORMANCE DA SAFRA -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div class="flex justify-between mb-2">
-                    <h3 class="font-bold text-gray-800">Performance da Safra Atual</h3>
-                    <span class="text-sm font-bold text-[#1a472a]">72%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                    <div class="bg-gradient-to-r from-green-500 to-[#1a472a] h-4 rounded-full flex items-center justify-end pr-2 text-white text-[10px] font-bold" style="width: 72%;">72%</div>
-                </div>
+                <div class="flex justify-between mb-2"><h3 class="font-bold text-gray-800">Performance da Safra Atual</h3><span class="text-sm font-bold text-[#1a472a]">72%</span></div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden"><div class="bg-gradient-to-r from-green-500 to-[#1a472a] h-4 rounded-full" style="width: 72%;"></div></div>
             </div>
 
         </main>
@@ -160,59 +114,122 @@
 
     <script>
         const supabaseClient = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
-
         let permissoes = {};
 
-        // Função de Cálculo de Área
         function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
         function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
-            
             const whatsapp = session.user.email.replace('@app.ndvi', '');
             const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('whatsapp', whatsapp).single();
             
             if (cli) {
-                // Saudação dinâmica
                 const hora = new Date().getHours();
-                let saud = "Bom dia";
-                if (hora >= 12 && hora < 18) saud = "Boa tarde";
-                else if (hora >= 18) saud = "Boa noite";
-                
-                const primeiroNome = cli.nome.split(" ")[0];
+                let saud = "Bom dia"; if (hora >= 12 && hora < 18) saud = "Boa tarde"; else if (hora >= 18) saud = "Boa noite";
+                const pNome = cli.nome.split(" ")[0];
                 document.getElementById('saudacao').innerText = saud;
-                document.getElementById('nome-saudacao').innerText = primeiroNome;
-                document.getElementById('header-nome').innerText = primeiroNome;
+                document.getElementById('nome-saudacao').innerText = pNome;
+                document.getElementById('header-nome').innerText = pName;
                 document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
-                
                 permissoes = cli;
                 atualizarMenuPermissoes();
                 
-                // Buscar Áreas e Contagens
-                const { data: talhoes } = await supabaseClient.from('talhoes').select('geom, area_hectares, tipo_plantio').eq('cliente_id', cli.id);
+                // Busca todos os dados necessários de uma vez
+                const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', cli.id);
                 if (talhoes) {
                     let tg=0, tp=0, ts=0;
+                    let somaNdvi = 0, countNdvi = 0;
+                    let contagemClasses = [0, 0, 0, 0, 0, 0]; // 6 classes
+                    let alertas = [];
+                    
                     talhoes.forEach(t => {
                         let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
-                        if (!area) return;
-                        tg += area;
-                        if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
+                        if (area) {
+                            tg += area; if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
+                        }
+                        
+                        // Lógica de NDVI Médio e Alerta de Queda
+                        if (t.ndvi_medio !== null && t.ndvi_medio !== undefined) {
+                            somaNdvi += parseFloat(t.ndvi_medio);
+                            countNdvi++;
+                            
+                            // Classificação para as barras de porcentagem
+                            let ndvi = parseFloat(t.ndvi_medio);
+                            let classe;
+                            if (ndvi < 0.15) classe = 1; // Solo/Água
+                            else if (ndvi < 0.30) classe = 2; // Muito Baixo
+                            else if (ndvi < 0.45) classe = 3; // Baixo
+                            else if (ndvi < 0.60) classe = 4; // Médio
+                            else classe = 5; // Alto (Assumindo que não conta negativo como água na média geral)
+                            contagemClasses[classe - 1]++;
+                            
+                            // Lógica de Alerta de Queda (Anterior >= 0.8 e caiu mais de 20%)
+                            let ant = parseFloat(t.ndvi_medio_anterior || 0);
+                            if (ant >= 0.8) {
+                                let queda = (ant - ndvi) / ant;
+                                if (queda >= 0.20) {
+                                    let nomeT = t.codigo_bloco ? `${t.codigo_bloco}-${t.codigo_talhao}` : t.codigo_talhao;
+                                    alertas.push({ nome: nomeT, ant: ant, atual: ndvi, queda: (queda * 100).toFixed(0) });
+                                }
+                            }
+                        }
                     });
+
+                    // Atualiza Cards de Área
                     document.getElementById('card-area').innerText = formatBR(tg) + " ha";
                     document.getElementById('card-plantio').innerText = formatBR(tp) + " ha";
                     document.getElementById('card-soca').innerText = formatBR(ts) + " ha";
                     document.getElementById('card-talhoes').innerText = talhoes.length;
+
+                    // Atualiza Card de NDVI Médio
+                    if (countNdvi > 0) {
+                        document.getElementById('ndvi-medio-geral').innerText = (somaNdvi / countNdvi).toFixed(2);
+                    }
+
+                    // Atualiza Legenda de Cores (Barras)
+                    const coresLeg = [
+                        {cor:"#6e4628", nome:"Solo/Água"}, {cor:"#d71e19", nome:"Muito Baixo"},
+                        {cor:"#f08c28", nome:"Baixo"}, {cor:"#fadc3c", nome:"Médio"},
+                        {cor:"#82c83c", nome:"Bom"}, {cor:"#148228", nome:"Alto"}
+                    ];
+                    const containerLeg = document.getElementById('ndvi-legenda-container');
+                    containerLeg.innerHTML = '';
+                    coresLeg.forEach((c, i) => {
+                        let perc = countNdvi > 0 ? (contagemClasses[i] / countNdvi * 100).toFixed(0) : 0;
+                        containerLeg.innerHTML += `
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 rounded" style="background-color:${c.cor};"></div>
+                                <span class="text-xs w-24">${c.nome}</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-2"><div class="h-2 rounded-full" style="width:${perc}%; background-color:${c.cor};"></div></div>
+                                <span class="text-xs font-bold w-8 text-right">${perc}%</span>
+                            </div>
+                        `;
+                    });
+
+                    // Atualiza Painel de Alertas
+                    const alertCont = document.getElementById('alertas-container');
+                    if (alertas.length > 0) {
+                        document.getElementById('alert-dot').style.display = 'block';
+                        alertCont.innerHTML = alertas.map(a => `
+                            <div class="flex items-start gap-2 text-red-600 bg-red-50 p-2 rounded">
+                                <span>🚨</span>
+                                <div>
+                                    <p class="font-bold">Queda de Vigor (Talhão ${a.nome})</p>
+                                    <p class="text-xs text-red-500">NDVI caiu ${a.queda}% (De ${a.ant.toFixed(2)} para ${a.atual.toFixed(2)}). Verifique pragas ou déficit hídrico.</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        alertCont.innerHTML = `<div class="flex items-start gap-2 text-green-600"><span>✅</span><p>Nenhum alerta crítico de queda de biomassa detectado.</p></div>`;
+                    }
                 }
             }
         };
 
         function atualizarMenuPermissoes() {
-            const mapaModulos = {
-                'qualidade': 'mod_qualidade', 'pragas': 'mod_pragas',
-                'agronomico': 'mod_agronomico', 'solo': 'mod_solo'
-            };
+            const mapaModulos = { 'qualidade': 'mod_qualidade', 'pragas': 'mod_pragas', 'agronomico': 'mod_agronomico', 'solo': 'mod_solo' };
             for (const key in mapaModulos) {
                 const dbCol = mapaModulos[key];
                 const menuItem = document.getElementById('menu-' + key);
@@ -224,8 +241,7 @@
                 }
             }
         }
-
-        function checkLock(modulo) { alert('Módulo Bloqueado! Contate o suporte para liberar os relatórios de ' + modulo + '.'); }
+        function checkLock(modulo) { alert('Módulo Bloqueado! Contate o suporte para liberar.'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
