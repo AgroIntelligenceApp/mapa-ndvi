@@ -101,13 +101,35 @@
                 if (errT) throw errT;
 
                 if (talhoes) {
-                    let tg=0,tp=0,ts=0;let mat={},amb={},var={},cor={};
-                    talhoes.forEach(t=>{let area=t.area_hectares||(t.geom?calcArea(typeof t.geom==='string'?JSON.parse(t.geom):t.geom):0);if(!area)return;tg+=area;if(t.tipo_plantio==='Plantio')tp+=area;else ts+=area;let mk=t.maturacao||'N/D';if(!mat[mk])mat[mk]=0;mat[mk]+=area;let ak=t.ambiente_producao||'N/D';if(!amb[ak])amb[ak]=0;amb[ak]+=area;let vk=t.variedade||'N/D';if(!var[vk])var[vk]=0;var[vk]+=area;let ck=`${t.numero_corte||1}º Corte`;if(!cor[ck])cor[ck]={area:0,iSoma:0,count:0};cor[ck].area+=area;let id=calcIdade(t.tipo_plantio==='Plantio'?t.data_plantio:t.data_ultimo_corte);if(id!=="N/D"){cor[ck].iSoma+=parseInt(id);cor[ck].count++;}});
-                    document.getElementById('total-geral').innerText=formatBR(tg)+" ha";document.getElementById('total-plantio').innerText=formatBR(tp)+" ha";document.getElementById('total-soca').innerText=formatBR(ts)+" ha";
-                    let h='';for(let k in mat)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`;document.getElementById('tabela-maturacao').innerHTML=h;
-                    h='';for(let k in amb)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`;document.getElementById('tabela-ambientes').innerHTML=h;
-                    h='';for(let k in var)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(var[k])}</td></tr>`;document.getElementById('tabela-variedades').innerHTML=h;
-                    h='';for(let k in cor){let o=cor[k];let id=o.count>0?Math.round(o.iSoma/o.count)+"m":"N/D";h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`;}document.getElementById('tabela-cortes').innerHTML=h;
+                    let tg=0, tp=0, ts=0;
+                    let mat={}, amb={}, vArr={}, cor={}; // Corrigido: var para vArr
+                    
+                    talhoes.forEach(t => {
+                        let area = t.area_hectares || (t.geom ? calcArea(typeof t.geom === 'string' ? JSON.parse(t.geom) : t.geom) : 0);
+                        if (!area) return;
+                        tg += area;
+                        if (t.tipo_plantio === 'Plantio') tp += area; else ts += area;
+                        
+                        let mk = t.maturacao || 'N/D'; if (!mat[mk]) mat[mk] = 0; mat[mk] += area;
+                        let ak = t.ambiente_producao || 'N/D'; if (!amb[ak]) amb[ak] = 0; amb[ak] += area;
+                        let vk = t.variedade || 'N/D'; if (!vArr[vk]) vArr[vk] = 0; vArr[vk] += area; // Corrigido
+                        
+                        let ck = `${t.numero_corte || 1}º Corte`; 
+                        if (!cor[ck]) cor[ck] = { area: 0, iSoma: 0, count: 0 }; 
+                        cor[ck].area += area;
+                        let id = calcIdade(t.tipo_plantio === 'Plantio' ? t.data_plantio : t.data_ultimo_corte);
+                        if (id !== "N/D") { cor[ck].iSoma += parseInt(id); cor[ck].count++; }
+                    });
+
+                    document.getElementById('total-geral').innerText = formatBR(tg) + " ha";
+                    document.getElementById('total-plantio').innerText = formatBR(tp) + " ha";
+                    document.getElementById('total-soca').innerText = formatBR(ts) + " ha";
+                    
+                    let h = ''; for (let k in mat) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`; document.getElementById('tabela-maturacao').innerHTML = h;
+                    h = ''; for (let k in amb) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`; document.getElementById('tabela-ambientes').innerHTML = h;
+                    h = ''; for (let k in vArr) h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(vArr[k])}</td></tr>`; document.getElementById('tabela-variedades').innerHTML = h; // Corrigido
+                    h = ''; for (let k in cor) { let o = cor[k]; let id = o.count > 0 ? Math.round(o.iSoma / o.count) + "m" : "N/D"; h += `<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`; } document.getElementById('tabela-cortes').innerHTML = h;
+                    
                     document.getElementById('status-kpi').classList.add('hidden');
                     document.getElementById('conteudo-kpi').classList.remove('hidden');
                 }
