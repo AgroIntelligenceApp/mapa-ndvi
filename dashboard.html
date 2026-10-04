@@ -65,7 +65,6 @@
         </aside>
 
         <main class="flex-1 p-6 md:p-8 overflow-y-auto">
-            
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
                 <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
@@ -84,7 +83,6 @@
                     <p class="text-gray-400">Verificando talhões...</p>
                 </div>
             </div>
-
         </main>
     </div>
 
@@ -112,7 +110,12 @@
                 if (cli) { clienteId = cli.id; nomeUsuario = cli.nome; }
             }
 
-            if (!clienteId) { window.location.href = 'index.html'; return; }
+            // CORREÇÃO DO LOOP: Desloga se não achar o usuário para não ficar redirecionando
+            if (!clienteId) {
+                await supabaseClient.auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
 
             const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('id', clienteId).single();
             
