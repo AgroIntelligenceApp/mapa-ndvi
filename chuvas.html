@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agro Intelligence | Dados de Chuva</title>
+    <title>Agro Intelligence | Clima & Chuva</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Bibliotecas de Gráficos -->
@@ -22,7 +22,7 @@
             <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
             <div class="text-right">
                 <h1 class="text-lg font-bold">Agro Intelligence</h1>
-                <p class="text-xs opacity-80">Dados Pluviométricos</p>
+                <p class="text-xs opacity-80">Clima & Chuva</p>
             </div>
         </div>
         <div style="width: 50px;"></div>
@@ -31,23 +31,42 @@
     <main class="flex-1 p-4 md:p-8 flex flex-col items-center w-full max-w-5xl mx-auto">
         
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico de Chuvas</h2>
-            
-            <!-- NOVA CAIXA DE BUSCA INTELIGENTE -->
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🌧️ Histórico e Previsão Pluviométrica</h2>
             <label class="block text-sm font-medium text-gray-300 mb-1 text-gray-600">Buscar Município</label>
             <div class="relative">
                 <input type="text" id="input-cidade" oninput="buscarCidades()" placeholder="Digite o nome da cidade (ex: Uberaba)" class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-green-500 outline-none">
                 <div id="resultados-busca" class="resultados-busca absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 hidden"></div>
             </div>
-            
-            <button onclick="buscarDados()" class="w-full bg-[#1a472a] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2d8659] transition duration-200 mt-4">
-                Buscar Dados
-            </button>
+            <button onclick="buscarDados()" class="w-full bg-[#1a472a] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2d8659] transition duration-200 mt-4">Buscar Dados</button>
         </div>
 
         <div id="status-chuva" class="text-gray-500 text-sm text-center hidden p-3 rounded-lg bg-gray-50 mb-6">Processando...</div>
 
-        <!-- Gráficos -->
+        <!-- CARDS DE RESUMO (Acumulado e Déficit) -->
+        <div class="w-full grid grid-cols-2 md:grid-cols-5 gap-4 mb-6" id="cards-resumo">
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 text-center">
+                <p class="text-xs text-gray-500 font-medium">Chuva Diária</p>
+                <p class="text-xl font-bold text-blue-600 mt-1" id="resumo-diaria">0 mm</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-cyan-500 text-center">
+                <p class="text-xs text-gray-500 font-medium">Acumulado 7 Dias</p>
+                <p class="text-xl font-bold text-cyan-600 mt-1" id="resumo-7dias">0 mm</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500 text-center">
+                <p class="text-xs text-gray-500 font-medium">Acumulado 15 Dias</p>
+                <p class="text-xl font-bold text-teal-600 mt-1" id="resumo-15dias">0 mm</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-600 text-center">
+                <p class="text-xs text-gray-500 font-medium">Acumulado 30 Dias</p>
+                <p class="text-xl font-bold text-green-600 mt-1" id="resumo-30dias">0 mm</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500 text-center">
+                <p class="text-xs text-gray-500 font-medium">Déficit Hídrico (30d)</p>
+                <p class="text-xl font-bold text-orange-600 mt-1" id="resumo-deficit">0 mm</p>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS -->
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-700">Previsão Próximos 15 Dias</h3>
@@ -58,24 +77,14 @@
 
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-700">15 Dias (Detalhado)</h3>
-                <span id="total-15" class="bg-green-100 text-green-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
+                <h3 class="text-lg font-bold text-gray-700">Chuva Diária (Últimos 30 Dias)</h3>
             </div>
-            <canvas id="grafico15dias" height="100"></canvas>
+            <canvas id="grafico30dias" height="100"></canvas>
         </div>
 
         <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-700">Últimos 3 Meses</h3>
-                <span id="total-3meses" class="bg-teal-100 text-teal-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
-            </div>
-            <canvas id="grafico3meses" height="100"></canvas>
-        </div>
-
-        <div class="w-full bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-700">Acumulado por Mês (Últimos 12 Meses)</h3>
-                <span id="total-12meses" class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">0 mm</span>
+                <h3 class="text-lg font-bold text-gray-700">Acumulado Mensal (Últimos 12 Meses) vs Média Histórica</h3>
             </div>
             <canvas id="grafico12meses" height="100"></canvas>
         </div>
@@ -87,26 +96,19 @@
         Chart.register(ChartDataLabels);
 
         let cidadeSelecionada = null;
+        let graficoPrevisao = null, grafico30 = null, grafico12 = null;
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) window.location.href = 'index.html';
         };
 
-        // NOVA FUNÇÃO: BUSCA DE CIDADES NA INTERNET
         async function buscarCidades() {
             const texto = document.getElementById('input-cidade').value.trim();
             const divResultados = document.getElementById('resultados-busca');
-            
-            if (texto.length < 3) {
-                divResultados.classList.add('hidden');
-                divResultados.innerHTML = '';
-                return;
-            }
-
+            if (texto.length < 3) { divResultados.classList.add('hidden'); return; }
             const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${texto}&count=5&language=pt&format=json`);
             const data = await res.json();
-
             divResultados.innerHTML = '';
             if (data.results) {
                 data.results.forEach(c => {
@@ -117,9 +119,7 @@
                     divResultados.appendChild(btn);
                 });
                 divResultados.classList.remove('hidden');
-            } else {
-                divResultados.classList.add('hidden');
-            }
+            } else { divResultados.classList.add('hidden'); }
         }
 
         function selecionarCidade(c) {
@@ -128,138 +128,91 @@
             document.getElementById('resultados-busca').classList.add('hidden');
         }
 
-        function formatarDataLabel(dataStr) {
-            const partes = dataStr.split('-');
-            return `${partes[2]}/${partes[1]}`;
-        }
-
-        function formatarData(date) {
-            return date.toISOString().split('T')[0];
-        }
-
         async function buscarDados() {
-            if (!cidadeSelecionada) {
-                alert("Digite e selecione uma cidade na lista de busca.");
-                return;
-            }
-
-            const lat = cidadeSelecionada.lat;
-            const lon = cidadeSelecionada.lon;
-
+            if (!cidadeSelecionada) { alert("Digite e selecione uma cidade."); return; }
             const status = document.getElementById('status-chuva');
             status.classList.remove('hidden');
             status.innerText = "Buscando dados na nuvem... Isso pode levar alguns segundos.";
 
             try {
+                const lat = cidadeSelecionada.lat, lon = cidadeSelecionada.lon;
                 const dataFim = new Date();
-                const dataInicio12Meses = new Date();
-                dataInicio12Meses.setFullYear(dataFim.getFullYear() - 1);
+                const dataInicio = new Date(); dataInicio.setFullYear(dataFim.getFullYear() - 1);
+                
+                // Busca Chuva e Evapotranspiração (ET0) no histórico
+                const urlHist = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${dataInicio.toISOString().split('T')[0]}&end_date=${dataFim.toISOString().split('T')[0]}&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=America/Sao_Paulo`;
+                const resHist = await fetch(urlHist); const dataHist = await resHist.json();
 
-                const inicio = formatarData(dataInicio12Meses);
-                const fim = formatarData(dataFim);
-
-                const urlHistorico = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${inicio}&end_date=${fim}&daily=precipitation_sum&timezone=America/Sao_Paulo`;
-                const resHist = await fetch(urlHistorico);
-                const dataHist = await resHist.json();
-
-                const urlPrevisao = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America/Sao_Paulo&forecast_days=15`;
-                const resPrev = await fetch(urlPrevisao);
-                const dataPrev = await resPrev.json();
+                // Busca Chuva e ET0 na previsão
+                const urlPrev = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=America/Sao_Paulo&forecast_days=15`;
+                const resPrev = await fetch(urlPrev); const dataPrev = await resPrev.json();
 
                 if (dataHist && dataHist.daily && dataPrev && dataPrev.daily) {
+                    const datas = dataHist.daily.time;
+                    const chuvas = dataHist.daily.precipitation_sum.map(v => v === null ? 0 : v);
+                    const et0s = dataHist.daily.et0_fao_evapotranspiration.map(v => v === null ? 0 : v);
                     
-                    const todasDatas = dataHist.daily.time;
-                    const todaChuva = dataHist.daily.precipitation_sum.map(v => v === null ? 0 : v);
                     const datasPrev = dataPrev.daily.time;
                     const chuvaPrev = dataPrev.daily.precipitation_sum.map(v => v === null ? 0 : v);
 
-                    const total15 = todaChuva.slice(-15).reduce((a, b) => a + b, 0);
-                    const total3 = todaChuva.slice(-90).reduce((a, b) => a + b, 0);
-                    const totalPrev = chuvaPrev.reduce((a, b) => a + b, 0);
+                    // Cálculos Cards de Resumo
+                    const calcSoma = (arr) => arr.reduce((a, b) => a + b, 0);
+                    const diaria = chuvas[chuvas.length - 1];
+                    const soma7 = calcSoma(chuvas.slice(-7));
+                    const soma15 = calcSoma(chuvas.slice(-15));
+                    const soma30 = calcSoma(chuvas.slice(-30));
+                    const somaET0_30 = calcSoma(et0s.slice(-30));
+                    const deficit = somaET0_30 - soma30; // Se positivo, déficit. Se negativo, excedente.
 
-                    document.getElementById('total-previsao').innerText = totalPrev.toFixed(1) + " mm";
-                    document.getElementById('total-15').innerText = total15.toFixed(1) + " mm";
-                    document.getElementById('total-3meses').innerText = total3.toFixed(1) + " mm";
+                    document.getElementById('resumo-diaria').innerText = diaria.toFixed(1) + " mm";
+                    document.getElementById('resumo-7dias').innerText = soma7.toFixed(1) + " mm";
+                    document.getElementById('resumo-15dias').innerText = soma15.toFixed(1) + " mm";
+                    document.getElementById('resumo-30dias').innerText = soma30.toFixed(1) + " mm";
+                    document.getElementById('resumo-deficit').innerText = (deficit >= 0 ? "-" : "+") + Math.abs(deficit).toFixed(1) + " mm";
+                    document.getElementById('resumo-deficit').className = "text-xl font-bold mt-1 " + (deficit >= 0 ? "text-orange-600" : "text-blue-600");
+
+                    document.getElementById('total-previsao').innerText = calcSoma(chuvaPrev).toFixed(1) + " mm";
                     status.classList.add('hidden');
 
-                    const datas15Fmt = todasDatas.slice(-15).map(formatarDataLabel);
-                    const datas3Fmt = todasDatas.slice(-90).map(formatarDataLabel);
-                    const datasPrevFmt = datasPrev.map(formatarDataLabel);
-
-                    // Lógica: Agrupar 12 meses por Mês e Ano
-                    const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                    let monthlyData = {};
-                    for (let i = 0; i < todasDatas.length; i++) {
-                        let ym = todasDatas[i].substring(0, 7);
-                        let val = todaChuva[i] === null ? 0 : todaChuva[i];
-                        if (!monthlyData[ym]) monthlyData[ym] = 0;
-                        monthlyData[ym] += val;
-                    }
-
-                    let datas12Fmt = [];
-                    let chuva12 = [];
-                    let hoje = new Date();
-                    let total12 = 0;
+                    // Gráficos
+                    desenharGrafico('graficoPrevisao', datasPrev, chuvaPrev, 'bar', 'rgba(59, 130, 246, 0.7)', true);
+                    desenharGrafico('grafico30dias', datas.slice(-30), chuvas.slice(-30), 'bar', 'rgba(54, 162, 235, 0.7)', false);
                     
+                    // Gráfico 12 meses (Comparação de Chuva Acumulada por Mês)
+                    const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                    let monthlyData = {}, monthlyET0 = {};
+                    for (let i = 0; i < datas.length; i++) {
+                        let ym = datas[i].substring(0, 7);
+                        if (!monthlyData[ym]) { monthlyData[ym] = 0; monthlyET0[ym] = 0; }
+                        monthlyData[ym] += chuvas[i]; monthlyET0[ym] += et0s[i];
+                    }
+                    let datas12Fmt = [], chuva12 = [];
+                    let hoje = new Date();
                     for (let i = 11; i >= 0; i--) {
                         let d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
                         let ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        let ano2 = String(d.getFullYear()).substring(2); // Pega "26" de 2026
-                        datas12Fmt.push(`${mesesNomes[d.getMonth()]}/${ano2}`); // Formato: Jan/26
-                        let valMes = monthlyData[ym] || 0;
-                        chuva12.push(valMes);
-                        total12 += valMes;
+                        datas12Fmt.push(mesesNomes[d.getMonth()]);
+                        chuva12.push(monthlyData[ym] || 0);
                     }
-
-                    document.getElementById('total-12meses').innerText = total12.toFixed(1) + " mm";
-
-                    // Desenha Gráficos
-                    desenharGrafico('graficoPrevisao', datasPrevFmt, chuvaPrev, 'bar', 'rgba(59, 130, 246, 0.7)', true);
-                    desenharGrafico('grafico15dias', datas15Fmt, todaChuva.slice(-15), 'bar', 'rgba(54, 162, 235, 0.7)', true);
-                    desenharGrafico('grafico3meses', datas3Fmt, todaChuva.slice(-90), 'bar', 'rgba(75, 192, 192, 0.7)', false);
-                    // Gráfico de 12 meses agora AZUL e com labels de Mês/Ano
-                    desenharGrafico('grafico12meses', datas12Fmt, chuva12, 'bar', 'rgba(54, 162, 235, 0.7)', true);
-
-                } else {
-                    status.innerText = "Não foi possível obter dados para este município.";
-                }
-            } catch (error) {
-                status.innerText = "Erro ao buscar dados: " + error.message;
-            }
+                    desenharGrafico('grafico12meses', datas12Fmt, chuva12, 'bar', 'rgba(26, 71, 42, 0.7)', true);
+                } else { status.innerText = "Não foi possível obter dados."; }
+            } catch (error) { status.innerText = "Erro: " + error.message; }
         }
 
         function desenharGrafico(canvasId, labels, dados, tipo, cor, mostrarValores) {
             const ctx = document.getElementById(canvasId).getContext('2d');
-            let graficoExistente = Chart.getChart(canvasId);
-            if (graficoExistente) graficoExistente.destroy();
-
+            if (Chart.getChart(canvasId)) Chart.getChart(canvasId).destroy();
             new Chart(ctx, {
                 type: tipo,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Precipitação (mm)',
-                        data: dados,
-                        backgroundColor: cor,
-                        borderColor: cor,
-                        borderWidth: 1
-                    }]
-                },
+                data: { labels, datasets: [{ label: 'Precipitação (mm)', data: dados, backgroundColor: cor, borderColor: cor, borderWidth: 1 }] },
                 options: {
                     responsive: true,
                     plugins: {
                         legend: { display: false },
                         tooltip: { callbacks: { label: (c) => `Chuva: ${c.raw.toFixed(1)} mm` } },
-                        datalabels: {
-                            display: mostrarValores, align: 'end', anchor: 'end',
-                            color: '#333', font: { weight: 'bold', size: 10 },
-                            formatter: (value) => value > 0 ? value.toFixed(0) : ''
-                        }
+                        datalabels: { display: mostrarValores, align: 'end', anchor: 'end', color: '#333', font: { weight: 'bold', size: 10 }, formatter: (v) => v > 0 ? v.toFixed(0) : '' }
                     },
-                    scales: {
-                        y: { beginAtZero: true, grid: { display: false } },
-                        x: { grid: { display: false } }
-                    }
+                    scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
                 }
             });
         }
