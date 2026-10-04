@@ -42,10 +42,6 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="modulos-container"></div>
             </div>
 
-            <div id="container-modulo-iframe" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
-                <iframe id="iframe-modulo" title="Módulo Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
-            </div>
-
         </div>
     </main>
 
@@ -64,7 +60,6 @@
                 if (!session) return window.location.href = 'index.html';
                 const whatsapp = session.user.email.replace('@app.ndvi', '');
                 
-                // 1. Lógica de Múltiplos Usuários: Busca o cliente_id
                 let cliId = null;
                 let { data: usuario } = await sb.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
                 if (usuario) { cliId = usuario.cliente_id; } 
@@ -75,21 +70,19 @@
 
                 if (!cliId) { await sb.auth.signOut(); window.location.href = 'index.html'; return; }
 
-                // 2. Busca as permissões e dados da empresa usando o cliId
                 const { data: cli, error: errCli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('id', cliId).single();
                 if (errCli) throw errCli;
                 if (!cli) throw new Error("Cliente não encontrado");
 
                 modulos = [
-                    { id: 'qualidade', nome: 'Qualidade Agrícola', ativo: cli.mod_qualidade, link: cli.link_qualidade, icon: '✅' },
-                    { id: 'pragas', nome: 'Controle de Pragas', ativo: cli.mod_pragas, link: cli.link_pragas, icon: '🐛' },
-                    { id: 'agronomico', nome: 'Desenvolvimento Agronômico', ativo: cli.mod_agronomico, link: cli.link_agronomico, icon: '🌱' },
-                    { id: 'solo', nome: 'Análises de Solo', ativo: cli.mod_solo, link: cli.link_solo, icon: '🧪' }
+                    { id: 'qualidade', nome: 'Qualidade Agrícola', ativo: cli.mod_qualidade, icon: '✅' },
+                    { id: 'pragas', nome: 'Controle de Pragas', ativo: cli.mod_pragas, icon: '🐛' },
+                    { id: 'agronomico', nome: 'Desenvolvimento Agronômico', ativo: cli.mod_agronomico, icon: '🌱' },
+                    { id: 'solo', nome: 'Análises de Solo', ativo: cli.mod_solo, icon: '🧪' }
                 ];
 
                 renderizarModulos();
 
-                // 3. Busca os talhões para calcular áreas
                 const { data: talhoes, error: errT } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio').eq('cliente_id', cli.id);
                 if (errT) throw errT;
 
@@ -137,13 +130,8 @@
                 alert('Módulo Bloqueado! Contate o suporte da Agro Intelligence para contratar este serviço.');
                 return;
             }
-            if (!mod.link) {
-                alert('Relatório em elaboração pela nossa equipe técnica.');
-                return;
-            }
-            document.getElementById('iframe-modulo').src = mod.link;
-            document.getElementById('container-modulo-iframe').classList.remove('hidden');
-            document.getElementById('container-modulo-iframe').scrollIntoView({ behavior: 'smooth' });
+            // REDIRECIONA PARA A PÁGINA EXCLUSIVA DO MÓDULO
+            window.location.href = `modulo.html?tipo=${id}`;
         };
     </script>
 </body>
