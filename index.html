@@ -12,9 +12,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
         body { background-color: #f4f6f8; height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* TELA DE LOGIN */
-        #tela-login { flex: 1; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #1a472a 0%, #2d8659 100%); }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center; }
+        /* TELA DE LOGIN COM IMAGEM DE FUNDO */
+        #tela-login { 
+            flex: 1; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background-color: #1a472a; /* Cor de backup caso a imagem não carregue */
+            background-image: linear-gradient(rgba(26, 71, 42, 0.85), rgba(26, 71, 42, 0.75)), url('fundo-login.jpg'); 
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); width: 90%; max-width: 400px; text-align: center; }
         .logo-img { width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
         .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
         .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
@@ -222,7 +232,6 @@
         }
 
         async function buscarTalhoes() {
-            // Atualizado para buscar o codigo_bloco também
             const { data, error } = await supabaseClient.from('talhoes').select('id, codigo_talhao, codigo_bloco, geom, imagem_ndvi, data_ndvi, ndvi_medio, area_hectares').eq('cliente_id', clienteId).eq('tem_ndvi', true);
             if (!error) { dadosTalhoes = data; renderizarLista(dadosTalhoes); iniciarMapa(); }
         }
@@ -232,7 +241,6 @@
             container.innerHTML = '';
             document.getElementById('barra-data').innerText = 'Selecione talhões e aguarde...';
             talhoes.forEach(talhao => {
-                // JUNTA O BLOCO COM O TALHÃO (ex: 1010-10)
                 let nomeExibicao = talhao.codigo_talhao;
                 if (talhao.codigo_bloco) {
                     nomeExibicao = `${talhao.codigo_bloco}-${talhao.codigo_talhao}`;
