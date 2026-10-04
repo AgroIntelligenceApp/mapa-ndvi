@@ -38,7 +38,6 @@
             text-align: center; 
             border: 1px solid rgba(255,255,255,0.4);
         }
-        /* LOGO 120x120 */
         .logo-img { width: 120px; height: 120px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
         .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
         .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
@@ -99,7 +98,6 @@
         .item-talhao label { margin-left: 10px; cursor: pointer; font-size: 15px; user-select: none; }
 
         .btn-flutuante { display: none; position: absolute; top: 10px; left: 10px; z-index: 1100; background: #1a472a; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); align-items: center; justify-content: center; }
-        /* BOTÃO FLUTUANTE DO DRONE */
         #btn-drone { display: none; position: absolute; top: 10px; left: 65px; z-index: 1100; background: #2563eb; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; }
         
         #mapa { flex: 1; background: #e9e9e9; position: relative; }
@@ -173,7 +171,7 @@
             </div>
             <div class="header-titulos">
                 <h1>Agro Intelligence</h1>
-                <p>Mapa NDVI</p>
+                <p id="titulo-pagina">Mapa NDVI</p>
             </div>
             <div class="header-right">
                 <button class="btn-logout" onclick="deslogar()">Sair</button>
@@ -182,14 +180,13 @@
         <div class="corpo">
             <div class="overlay-mobile" id="overlay-mobile" onclick="fecharListaMobile()"></div>
             <button class="btn-flutuante" id="btn-flutuante" onclick="abrirListaMobile()">☰</button>
-            <!-- BOTÃO DO DRONE -->
             <button id="btn-drone" onclick="toggleDrone()">Visualizar Drone</button>
             
             <div class="painel-lateral" id="painel-lateral">
                 <div class="busca-container">
                     <input type="text" id="campo-busca" placeholder="Buscar talhão (ex: 1010-10)" oninput="filtrarLista()">
                 </div>
-                <div class="container-cultura">
+                <div class="container-cultura" id="wrap-cultura">
                     <select id="select-cultura">
                         <option value="cana">Cana-de-açúcar (TCH)</option>
                         <option value="soja">Soja (Sc/ha)</option>
@@ -199,7 +196,7 @@
                 <div class="botoes-acoes">
                     <button onclick="marcarTodos()">Marcar Todos</button>
                     <button onclick="desmarcarTodos()">Desmarcar Todos</button>
-                    <button onclick="analisarSelecao()" class="btn-analisar">Analisar Biomassa</button>
+                    <button onclick="analisarSelecao()" class="btn-analisar" id="btn-analisar">Analisar Biomassa</button>
                 </div>
                 <div id="lista-talhoes"></div>
             </div>
@@ -226,8 +223,9 @@
         let dadosTalhoes = [];
         let clienteId = null;
         let isMobile = window.innerWidth <= 768;
-        let camadaDrone = null; // Variável para a camada do drone
-        let linkDroneCliente = null; // Variável para guardar o link do banco
+        let camadaDrone = null;
+        let linkDroneCliente = null;
+        let modoMapa = 'ndvi'; // Padrão
 
         function abrirListaMobile() { document.getElementById('painel-lateral').classList.add('aberto'); document.getElementById('overlay-mobile').classList.add('visivel'); }
         function fecharListaMobile() { document.getElementById('painel-lateral').classList.remove('aberto'); document.getElementById('overlay-mobile').classList.remove('visivel'); }
@@ -247,7 +245,6 @@
             }
         }
 
-        // FUNÇÃO PARA TROCAR O MAPA ENTRE SATÉLITE E DRONE
         function toggleDrone() {
             const btn = document.getElementById('btn-drone');
             if (mapa.hasLayer(camadaDrone)) {
@@ -268,6 +265,7 @@
             
             const urlParams = new URLSearchParams(window.location.search);
             const view = urlParams.get('view');
+            const mode = urlParams.get('mode');
 
             if (session) {
                 const whatsapp = session.user.email.replace('@app.ndvi', '');
@@ -275,6 +273,18 @@
                     window.location.href = 'dashboard.html';
                     return;
                 }
+                
+                // Lógica de Modo (Limites vs NDVI)
+                if (mode === 'limites') {
+                    modoMapa = 'limites';
+                    document.getElementById('titulo-pagina').innerText = "Limites da Fazenda";
+                    document.getElementById('wrap-cultura').style.display = 'none'; // Esconde seleção de cultura
+                    document.getElementById('btn-analisar').style.display = 'none'; // Esconde botão de analisar
+                } else {
+                    modoMapa = 'ndvi';
+                    document.getElementById('titulo-pagina').innerText = "Mapa NDVI";
+                }
+
                 await validarAcessoELoadar(whatsapp);
             } else {
                 mostrarTela('login');
@@ -317,14 +327,12 @@
         async function validarAcessoELoadar(whatsapp) {
             const msgErro = document.getElementById('msg-erro-login');
             
-            // 1. Tenta achar o usuário na tabela 'usuarios' (Múltiplos logins)
             let cliId = null;
             let { data: usuario } = await supabaseClient.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
             
             if (usuario) {
                 cliId = usuario.cliente_id;
             } else {
-                // 2. Se não achar, tenta achar direto na tabela 'clientes' (Login do dono)
                 let { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
                 if (cli) cliId = cli.id;
             }
@@ -337,7 +345,6 @@
                 return;
             }
 
-            // 3. Busca os dados da Fazenda (cliente) usando o cliId achado
             const { data: cliente, error: dbError } = await supabaseClient.from('clientes').select('id, ativo, link_drone').eq('id', cliId).single();
             if (dbError || !cliente) {
                 await supabaseClient.auth.signOut();
@@ -428,7 +435,12 @@
                 try {
                     const geojson = typeof talhao.geom === 'string' ? JSON.parse(talhao.geom) : talhao.geom;
                     L.geoJSON(geojson, { style: { color: 'white', weight: 2, fillOpacity: 0 } }).addTo(mapa);
-                    if (talhao.imagem_ndvi) { const bounds = L.geoJSON(geojson).getBounds(); const imageUrl = `data:image/png;base64,${talhao.imagem_ndvi}`; L.imageOverlay(imageUrl, bounds, { opacity: 0.9 }).addTo(mapa); }
+                    // SÓ ADICIONA IMAGEM SE FOR MODO NDVI
+                    if (talhao.imagem_ndvi && modoMapa === 'ndvi') { 
+                        const bounds = L.geoJSON(geojson).getBounds(); 
+                        const imageUrl = `data:image/png;base64,${talhao.imagem_ndvi}`; 
+                        L.imageOverlay(imageUrl, bounds, { opacity: 0.9 }).addTo(mapa); 
+                    }
                     if (talhao.data_ndvi) datasEncontradas.add(talhao.data_ndvi);
                 } catch (e) { console.error("Erro:", e); }
             });
