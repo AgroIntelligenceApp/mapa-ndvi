@@ -39,21 +39,27 @@
         <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col overflow-y-auto transition-all duration-300 md:translate-x-0 -translate-x-full fixed md:relative h-full z-10">
             <div class="p-4">
                 <div class="border-b pb-2 mb-2"><h2 class="text-md font-bold text-gray-800" id="nome-cliente">Carregando...</h2></div>
+                
                 <div class="menu-category-title">Principal</div>
                 <a href="dashboard.html" class="menu-item active">🏠 Visão Geral</a>
                 <a href="index.html?view=map&mode=limites" class="menu-item">🗺️ Mapas</a>
+                
                 <div class="menu-category-title">Agronomia</div>
                 <div id="menu-dev" class="menu-item locked" onclick="checkLock('agronomico')">🌱 Desenvolvimento 🔒</div>
                 <div id="menu-pragas" class="menu-item locked" onclick="checkLock('pragas')">🐛 Pragas & Doenças 🔒</div>
                 <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Análise de Solo 🔒</div>
+                <!-- MOVIDO E RENOMEADO PARA AGRONÔMICO -->
+                <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Agronômico 🔒</div>
+                
                 <div class="menu-category-title">Monitoramento</div>
                 <a href="index.html?view=map&mode=ndvi" class="menu-item">🛰️ NDVI</a>
                 <a href="chuvas.html" class="menu-item">🌧️ Clima & Chuva</a>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">🚜 Operações 🔒</div>
+                
                 <div class="menu-category-title">Gestão</div>
                 <a href="kpi.html" class="menu-item">📊 Indicadores</a>
-                <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
                 <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento.')">📑 Relatórios 🔒</div>
+                
                 <div class="menu-category-title">Sistema</div>
                 <a href="configuracoes.html" class="menu-item">⚙️ Configurações</a>
             </div>
