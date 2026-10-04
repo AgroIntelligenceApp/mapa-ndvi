@@ -6,59 +6,149 @@
     <title>Agro Intelligence | Painel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .menu-item:hover { background-color: #f0f0f0; }
+        .menu-item.locked { color: #9ca3af; cursor: not-allowed; }
+        .menu-item.active { background-color: #2d8659; color: white; }
+        .menu-category-title { font-size: 11px; text-transform: uppercase; color: #6b7280; margin-top: 15px; margin-bottom: 5px; padding-left: 5px; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     
-    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-10">
-        <div class="flex items-center gap-3">
-            <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
-            <div>
-                <h1 class="text-lg font-bold">Agro Intelligence</h1>
-                <p class="text-xs opacity-80">Painel do Cliente</p>
-            </div>
+    <!-- HEADER -->
+    <header class="bg-[#1a472a] text-white p-4 flex justify-between items-center shadow-md z-20">
+        <button onclick="toggleSidebar()" class="text-white hover:bg-white/10 p-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        <div class="flex items-center gap-2">
+            <img src="logo.png" alt="Logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+            <h1 class="text-lg font-bold">Agro Intelligence</h1>
         </div>
         <button onclick="deslogar()" class="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded text-sm">Sair</button>
     </header>
 
-    <main class="flex-1 p-6 flex flex-col items-center">
-        <div class="text-center mb-10">
-            <h2 class="text-2xl font-bold text-gray-800">Bem-vindo!</h2>
-            <p id="nome-cliente" class="text-gray-600 font-medium">Carregando...</p>
-        </div>
+    <!-- LAYOUT FLEXÍVEL (SIDEBAR + CONTEÚDO) -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- SIDEBAR MENU -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col overflow-y-auto transition-all duration-300 md:translate-x-0 -translate-x-full fixed md:relative h-full z-10">
+            <div class="p-4">
+                <div class="border-b pb-2 mb-2">
+                    <h2 class="text-md font-bold text-gray-800" id="nome-cliente">Carregando...</h2>
+                </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-            <a href="index.html?view=map" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                <div class="text-5xl mb-4">🛰️</div>
-                <h3 class="text-xl font-bold text-gray-800">Mapa NDVI</h3>
-                <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade.</p>
-            </a>
+                <!-- PRINCIPAL -->
+                <div class="menu-category-title">Principal</div>
+                <a href="dashboard.html" class="menu-item active">🏠 Visão Geral</a>
+                <a href="index.html?view=map" class="menu-item">🗺️ Mapas</a>
 
-            <a href="chuvas.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                <div class="text-5xl mb-4">🌧️</div>
-                <h3 class="text-xl font-bold text-gray-800">Dados de Chuva</h3>
-                <p class="text-gray-500 text-sm text-center mt-2">Histórico e previsão pluviométrica.</p>
-            </a>
+                <!-- AGRONOMIA -->
+                <div class="menu-category-title">Agronomia</div>
+                <div id="menu-dev" class="menu-item locked" onclick="checkLock('agronomico')">🌱 Desenvolvimento 🔒</div>
+                <div id="menu-pragas" class="menu-item locked" onclick="checkLock('pragas')">🐛 Pragas & Doenças 🔒</div>
+                <div id="menu-solo" class="menu-item locked" onclick="checkLock('solo')">🧪 Solo 🔒</div>
 
-            <a href="kpi.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
-                <div class="text-5xl mb-4">📊</div>
-                <h3 class="text-xl font-bold text-gray-800">Indicadores (KPI)</h3>
-                <p class="text-gray-500 text-sm text-center mt-2">Áreas por estágio, corte e variedade.</p>
-            </a>
-        </div>
-    </main>
+                <!-- MONITORAMENTO -->
+                <div class="menu-category-title">Monitoramento</div>
+                <a href="index.html?view=map" class="menu-item">🛰️ NDVI</a>
+                <a href="chuvas.html" class="menu-item">🌧️ Clima</a>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">🚜 Operações 🔒</div>
+
+                <!-- GESTÃO -->
+                <div class="menu-category-title">Gestão</div>
+                <a href="kpi.html" class="menu-item">📊 Indicadores</a>
+                <div id="menu-qualidade" class="menu-item locked" onclick="checkLock('qualidade')">📈 Qualidade 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">📑 Relatórios 🔒</div>
+
+                <!-- SISTEMA -->
+                <div class="menu-category-title">Sistema</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">🔔 Alertas 🔒</div>
+                <div class="menu-item locked" onclick="alert('Módulo em desenvolvimento. Contate o suporte.')">⚙️ Configurações 🔒</div>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl font-bold text-gray-800">Bem-vindo!</h2>
+                <p class="text-gray-600 font-medium" id="sub-nome">Carregando fazenda...</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+                <a href="index.html?view=map" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+                    <div class="text-5xl mb-4">🛰️</div>
+                    <h3 class="text-xl font-bold text-gray-800">Mapa NDVI</h3>
+                    <p class="text-gray-500 text-sm text-center mt-2">Visualize a biomassa e a produtividade.</p>
+                </a>
+
+                <a href="chuvas.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+                    <div class="text-5xl mb-4">🌧️</div>
+                    <h3 class="text-xl font-bold text-gray-800">Dados de Chuva</h3>
+                    <p class="text-gray-500 text-sm text-center mt-2">Histórico e previsão pluviométrica.</p>
+                </a>
+
+                <a href="kpi.html" class="bg-white rounded-xl shadow-lg p-8 flex flex-col items-center justify-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100">
+                    <div class="text-5xl mb-4">📊</div>
+                    <h3 class="text-xl font-bold text-gray-800">Indicadores (KPI)</h3>
+                    <p class="text-gray-500 text-sm text-center mt-2">Áreas por estágio, corte e variedade.</p>
+                </a>
+            </div>
+        </main>
+    </div>
 
     <script>
-        const supabaseUrl = 'https://keiydgyountsuzjybsng.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg';
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        const supabaseClient = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
+
+        let permissoes = {};
 
         window.onload = async () => {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
+            
             const whatsapp = session.user.email.replace('@app.ndvi', '');
-            const { data: cliente } = await supabaseClient.from('clientes').select('nome').eq('whatsapp', whatsapp).single();
-            if (cliente) { document.getElementById('nome-cliente').innerText = cliente.nome; }
+            // Busca os dados do cliente, incluindo as permissões de módulos
+            const { data: cli } = await supabaseClient.from('clientes').select('nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('whatsapp', whatsapp).single();
+            
+            if (cli) {
+                document.getElementById('nome-cliente').innerText = cli.nome || "Cliente";
+                document.getElementById('sub-nome').innerText = "Acompanhe a sua safra na palma da mão.";
+                
+                permissoes = cli;
+                atualizarMenuPermissoes();
+            }
         };
+
+        function atualizarMenuPermissoes() {
+            // Desbloqueia no menu se o cliente tiver o módulo ativado no banco
+            const mapaModulos = {
+                'qualidade': 'mod_qualidade',
+                'pragas': 'mod_pragas',
+                'agronomico': 'mod_agronomico',
+                'solo': 'mod_solo'
+            };
+
+            for (const key in mapaModulos) {
+                const dbCol = mapaModulos[key];
+                const menuItem = document.getElementById('menu-' + key);
+                if (menuItem && permissoes[dbCol] === true) {
+                    menuItem.classList.remove('locked');
+                    menuItem.innerHTML = menuItem.textContent.replace(' 🔒', ' ✅');
+                    menuItem.style.color = '#1a472a';
+                    // Se estiver liberado, muda o comportamento para ir para a tela de KPI
+                    menuItem.onclick = () => window.location.href = 'kpi.html';
+                }
+            }
+        }
+
+        function checkLock(modulo) {
+            alert('Módulo Bloqueado! Contate o suporte da Agro Intelligence para contratar este serviço e liberar os relatórios de ' + modulo + '.');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
 
         async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
     </script>
