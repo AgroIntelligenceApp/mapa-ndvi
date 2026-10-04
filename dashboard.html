@@ -110,12 +110,7 @@
                 if (cli) { clienteId = cli.id; nomeUsuario = cli.nome; }
             }
 
-            // CORREÇÃO DO LOOP: Desloga se não achar o usuário para não ficar redirecionando
-            if (!clienteId) {
-                await supabaseClient.auth.signOut();
-                window.location.href = 'index.html';
-                return;
-            }
+            if (!clienteId) { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; return; }
 
             const { data: cli } = await supabaseClient.from('clientes').select('id, nome, mod_qualidade, mod_pragas, mod_agronomico, mod_solo').eq('id', clienteId).single();
             
@@ -195,7 +190,8 @@
                     menuItem.classList.remove('locked');
                     menuItem.innerHTML = menuItem.textContent.replace(' 🔒', ' ✅');
                     menuItem.style.color = '#1a472a';
-                    menuItem.onclick = () => window.location.href = 'kpi.html';
+                    // ATUALIZADO: Manda direto para a página do módulo
+                    menuItem.onclick = () => window.location.href = `modulo.html?tipo=${key}`;
                 }
             }
         }
