@@ -56,13 +56,11 @@
                 </div>
             </div>
 
-            <!-- SEÇÃO DE MÓDULOS DE RELATÓRIOS (PAYWALL/UPSELL) -->
             <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-4">
                 <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">📂 Módulos de Análise Premium</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="modulos-container"></div>
             </div>
 
-            <!-- ONDE O IFRAME DO MÓDULO ESCOLHIDO VAI APARECER -->
             <div id="container-modulo-iframe" class="w-full overflow-hidden rounded-lg border border-gray-200 hidden" style="height: 600px;">
                 <iframe id="iframe-modulo" title="Módulo Agro Intelligence" width="100%" height="100%" frameborder="0" allowFullScreen="true"></iframe>
             </div>
@@ -80,35 +78,42 @@
         let modulos = [];
 
         window.onload = async () => {
-            const { data: { session } } = await sb.auth.getSession();
-            if (!session) return window.location.href = 'index.html';
-            const whatsapp = session.user.email.replace('@app.ndvi', '');
-            
-            // Busca dados do cliente (incluindo permissões e links dos módulos)
-            const { data: cli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('whatsapp', whatsapp).single();
-            if (!cli) return;
+            const statusEl = document.getElementById('status-kpi');
+            try {
+                const { data: { session } } = await sb.auth.getSession();
+                if (!session) return window.location.href = 'index.html';
+                const whatsapp = session.user.email.replace('@app.ndvi', '');
+                
+                const { data: cli, error: errCli } = await sb.from('clientes').select('id, mod_qualidade, link_qualidade, mod_pragas, link_pragas, mod_agronomico, link_agronomico, mod_solo, link_solo').eq('whatsapp', whatsapp).single();
+                if (errCli) throw errCli;
+                if (!cli) throw new Error("Cliente não encontrado");
 
-            modulos = [
-                { id: 'qualidade', nome: 'Qualidade Agrícola', ativo: cli.mod_qualidade, link: cli.link_qualidade, icon: '✅' },
-                { id: 'pragas', nome: 'Controle de Pragas', ativo: cli.mod_pragas, link: cli.link_pragas, icon: '🐛' },
-                { id: 'agronomico', nome: 'Desenvolvimento Agronômico', ativo: cli.mod_agronomico, link: cli.link_agronomico, icon: '🌱' },
-                { id: 'solo', nome: 'Análises de Solo', ativo: cli.mod_solo, link: cli.link_solo, icon: '🧪' }
-            ];
+                modulos = [
+                    { id: 'qualidade', nome: 'Qualidade Agrícola', ativo: cli.mod_qualidade, link: cli.link_qualidade, icon: '✅' },
+                    { id: 'pragas', nome: 'Controle de Pragas', ativo: cli.mod_pragas, link: cli.link_pragas, icon: '🐛' },
+                    { id: 'agronomico', nome: 'Desenvolvimento Agronômico', ativo: cli.mod_agronomico, link: cli.link_agronomico, icon: '🌱' },
+                    { id: 'solo', nome: 'Análises de Solo', ativo: cli.mod_solo, link: cli.link_solo, icon: '🧪' }
+                ];
 
-            renderizarModulos();
+                renderizarModulos();
 
-            const { data: talhoes } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cli.id);
+                const { data: talhoes, error: errT } = await sb.from('talhoes').select('geom, area_hectares, tipo_plantio, numero_corte, variedade, maturacao, ambiente_producao, data_plantio, data_ultimo_corte').eq('cliente_id', cli.id);
+                if (errT) throw errT;
 
-            if (talhoes) {
-                let tg=0,tp=0,ts=0;let mat={},amb={},var={},cor={};
-                talhoes.forEach(t=>{let area=t.area_hectares||(t.geom?calcArea(typeof t.geom==='string'?JSON.parse(t.geom):t.geom):0);if(!area)return;tg+=area;if(t.tipo_plantio==='Plantio')tp+=area;else ts+=area;let mk=t.maturacao||'N/D';if(!mat[mk])mat[mk]=0;mat[mk]+=area;let ak=t.ambiente_producao||'N/D';if(!amb[ak])amb[ak]=0;amb[ak]+=area;let vk=t.variedade||'N/D';if(!var[vk])var[vk]=0;var[vk]+=area;let ck=`${t.numero_corte||1}º Corte`;if(!cor[ck])cor[ck]={area:0,iSoma:0,count:0};cor[ck].area+=area;let id=calcIdade(t.tipo_plantio==='Plantio'?t.data_plantio:t.data_ultimo_corte);if(id!=="N/D"){cor[ck].iSoma+=parseInt(id);cor[ck].count++;}});
-                document.getElementById('total-geral').innerText=formatBR(tg)+" ha";document.getElementById('total-plantio').innerText=formatBR(tp)+" ha";document.getElementById('total-soca').innerText=formatBR(ts)+" ha";
-                let h='';for(let k in mat)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`;document.getElementById('tabela-maturacao').innerHTML=h;
-                h='';for(let k in amb)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`;document.getElementById('tabela-ambientes').innerHTML=h;
-                h='';for(let k in var)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(var[k])}</td></tr>`;document.getElementById('tabela-variedades').innerHTML=h;
-                h='';for(let k in cor){let o=cor[k];let id=o.count>0?Math.round(o.iSoma/o.count)+"m":"N/D";h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`;}document.getElementById('tabela-cortes').innerHTML=h;
-                document.getElementById('status-kpi').classList.add('hidden');
-                document.getElementById('conteudo-kpi').classList.remove('hidden');
+                if (talhoes) {
+                    let tg=0,tp=0,ts=0;let mat={},amb={},var={},cor={};
+                    talhoes.forEach(t=>{let area=t.area_hectares||(t.geom?calcArea(typeof t.geom==='string'?JSON.parse(t.geom):t.geom):0);if(!area)return;tg+=area;if(t.tipo_plantio==='Plantio')tp+=area;else ts+=area;let mk=t.maturacao||'N/D';if(!mat[mk])mat[mk]=0;mat[mk]+=area;let ak=t.ambiente_producao||'N/D';if(!amb[ak])amb[ak]=0;amb[ak]+=area;let vk=t.variedade||'N/D';if(!var[vk])var[vk]=0;var[vk]+=area;let ck=`${t.numero_corte||1}º Corte`;if(!cor[ck])cor[ck]={area:0,iSoma:0,count:0};cor[ck].area+=area;let id=calcIdade(t.tipo_plantio==='Plantio'?t.data_plantio:t.data_ultimo_corte);if(id!=="N/D"){cor[ck].iSoma+=parseInt(id);cor[ck].count++;}});
+                    document.getElementById('total-geral').innerText=formatBR(tg)+" ha";document.getElementById('total-plantio').innerText=formatBR(tp)+" ha";document.getElementById('total-soca').innerText=formatBR(ts)+" ha";
+                    let h='';for(let k in mat)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(mat[k])}</td></tr>`;document.getElementById('tabela-maturacao').innerHTML=h;
+                    h='';for(let k in amb)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(amb[k])}</td></tr>`;document.getElementById('tabela-ambientes').innerHTML=h;
+                    h='';for(let k in var)h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(var[k])}</td></tr>`;document.getElementById('tabela-variedades').innerHTML=h;
+                    h='';for(let k in cor){let o=cor[k];let id=o.count>0?Math.round(o.iSoma/o.count)+"m":"N/D";h+=`<tr><td class="py-2 text-xs">${k}</td><td class="py-2 text-xs text-right">${formatBR(o.area)}</td><td class="py-2 text-xs text-right">${id}</td></tr>`;}document.getElementById('tabela-cortes').innerHTML=h;
+                    document.getElementById('status-kpi').classList.add('hidden');
+                    document.getElementById('conteudo-kpi').classList.remove('hidden');
+                }
+            } catch (e) {
+                statusEl.innerText = "Erro ao carregar dados: " + e.message;
+                statusEl.className = "text-red-500 text-center p-4";
             }
         };
 
@@ -140,7 +145,6 @@
             }
             document.getElementById('iframe-modulo').src = mod.link;
             document.getElementById('container-modulo-iframe').classList.remove('hidden');
-            // Rola a tela até o iframe
             document.getElementById('container-modulo-iframe').scrollIntoView({ behavior: 'smooth' });
         };
     </script>
