@@ -18,22 +18,38 @@
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            background-color: #1a472a; /* Cor de backup caso a imagem não carregue */
+            background-color: #1a472a; 
             background-image: linear-gradient(rgba(26, 71, 42, 0.85), rgba(26, 71, 42, 0.75)), url('fundo-login.jpg'); 
             background-size: cover; 
             background-position: center;
             background-repeat: no-repeat;
         }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); width: 90%; max-width: 400px; text-align: center; }
+        
+        /* EFEITO VIDRO (GLASSMORPHISM) */
+        .login-box { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.4);
+        }
         .logo-img { width: 80px; height: 80px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
         .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
         .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
-        .login-box input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .login-box button { width: 100%; padding: 15px; background: #2d8659; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .login-box button:hover { background: #1a472a; }
+        .login-box input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; transition: all 0.2s; }
+        .login-box input:focus { border-color: #2d8659; box-shadow: 0 0 0 3px rgba(45, 134, 89, 0.2); outline: none; }
+        .login-box button { width: 100%; padding: 15px; background: #2d8659; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: all 0.3s; }
+        .login-box button:hover { background: #1a472a; transform: translateY(-1px); }
+        .login-box button:disabled { background: #999; cursor: not-allowed; transform: none; }
         .login-box a { color: #25D366; text-decoration: none; font-weight: bold; }
         #msg-erro-login { color: red; margin-top: 15px; font-size: 14px; min-height: 20px; }
         .dica-login { font-size: 12px; color: #888; margin-top: -5px; text-align: left; width: 100%; }
+        .badge-seguranca { margin-top: 25px; font-size: 11px; color: #666; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
         /* TELA DO APP */
         #tela-app { display: none; flex: 1; flex-direction: column; height: 100vh; height: 100dvh; }
@@ -96,18 +112,29 @@
             <img src="logo.png" alt="Agro Intelligence" class="logo-img" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
             <div id="logo-fallback" class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold" style="display: none; width: 64px; height: 64px;">A</div>
             <h2>Agro Intelligence</h2>
-                       
-            <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: XXxxxxxxxxx)" maxlength="15">
-            <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
+            <p class="subtitulo">Plataforma de Inteligência Agrícola</p>
             
-            <input type="password" id="campo-senha" placeholder="Sua Senha" style="margin-top: 15px;">
+            <!-- FORM com Enter para submeter -->
+            <form onsubmit="event.preventDefault(); fazerLogin();">
+                <input type="text" id="campo-whatsapp" placeholder="Seu WhatsApp (ex: 17997927252)" maxlength="15">
+                <p class="dica-login">Dica: Digite DDD + Número (11 dígitos).</p>
+                
+                <input type="password" id="campo-senha" placeholder="Sua Senha" style="margin-top: 15px;">
+                
+                <button type="submit" id="btn-entrar">Entrar</button>
+            </form>
             
-            <button onclick="fazerLogin()">Entrar</button>
             <div id="msg-erro-login"></div>
             <p style="margin-top: 20px; font-size: 14px; color: #666;">
                 Esqueceu sua senha ou precisa de acesso?<br>
                 <a href="https://wa.me/5517997927252?text=Olá, preciso de ajuda com meu acesso na Agro Intelligence." target="_blank">Fale com o Suporte</a>
             </p>
+            
+            <!-- BADGE DE SEGURANÇA -->
+            <div class="badge-seguranca">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Conexão Segura (SSL)
+            </div>
         </div>
     </div>
 
@@ -203,13 +230,16 @@
 
         async function fazerLogin() {
             const msgErro = document.getElementById('msg-erro-login');
+            const btn = document.getElementById('btn-entrar');
             const whatsappFormatado = padronizarWhatsapp(document.getElementById('campo-whatsapp').value);
             const senha = document.getElementById('campo-senha').value;
 
             if (whatsappFormatado.length < 11) { msgErro.innerText = "Digite um número válido (DDD + Número)."; msgErro.style.color = "red"; return; }
             if (!senha) { msgErro.innerText = "Digite sua senha."; msgErro.style.color = "red"; return; }
 
-            msgErro.innerText = "Verificando..."; msgErro.style.color = "#666";
+            btn.disabled = true; btn.innerText = "Verificando...";
+            msgErro.innerText = ""; 
+
             const emailFake = whatsappFormatado + "@app.ndvi"; 
 
             try {
@@ -219,6 +249,7 @@
             } catch (error) {
                 msgErro.style.color = "red";
                 msgErro.innerText = error.message.includes("Invalid login") ? "Número ou senha incorretos." : "Erro: " + error.message;
+                btn.disabled = false; btn.innerText = "Entrar";
             }
         }
 
@@ -245,7 +276,6 @@
                 if (talhao.codigo_bloco) {
                     nomeExibicao = `${talhao.codigo_bloco}-${talhao.codigo_talhao}`;
                 }
-
                 const div = document.createElement('div');
                 div.className = 'item-talhao';
                 div.innerHTML = `<input type="checkbox" class="check-talhao" value="${talhao.id}" onchange="atualizarMapa()"><label>${nomeExibicao}</label>`;
