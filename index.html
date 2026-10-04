@@ -38,7 +38,7 @@
             text-align: center; 
             border: 1px solid rgba(255,255,255,0.4);
         }
-        /* LOGO AUMENTADO PARA 120x120 */
+        /* LOGO 120x120 */
         .logo-img { width: 120px; height: 120px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
         .login-box h2 { color: #1a472a; margin-bottom: 5px; font-size: 24px; display: block; }
         .login-box .subtitulo { color: #555; font-size: 16px; margin-bottom: 20px; font-weight: bold; display: block; }
@@ -99,6 +99,9 @@
         .item-talhao label { margin-left: 10px; cursor: pointer; font-size: 15px; user-select: none; }
 
         .btn-flutuante { display: none; position: absolute; top: 10px; left: 10px; z-index: 1100; background: #1a472a; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); align-items: center; justify-content: center; }
+        /* BOTÃO FLUTUANTE DO DRONE */
+        #btn-drone { display: none; position: absolute; top: 10px; left: 65px; z-index: 1100; background: #2563eb; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-weight: bold; }
+        
         #mapa { flex: 1; background: #e9e9e9; position: relative; }
         
         #barra-data { background: #333; color: white; text-align: center; padding: 10px; font-size: 13px; z-index: 1000; }
@@ -179,6 +182,8 @@
         <div class="corpo">
             <div class="overlay-mobile" id="overlay-mobile" onclick="fecharListaMobile()"></div>
             <button class="btn-flutuante" id="btn-flutuante" onclick="abrirListaMobile()">☰</button>
+            <!-- BOTÃO DO DRONE -->
+            <button id="btn-drone" onclick="toggleDrone()">Visualizar Drone</button>
             
             <div class="painel-lateral" id="painel-lateral">
                 <div class="busca-container">
@@ -221,6 +226,8 @@
         let dadosTalhoes = [];
         let clienteId = null;
         let isMobile = window.innerWidth <= 768;
+        let camadaDrone = null; // Variável para a camada do drone
+        let linkDroneCliente = null; // Variável para guardar o link do banco
 
         function abrirListaMobile() { document.getElementById('painel-lateral').classList.add('aberto'); document.getElementById('overlay-mobile').classList.add('visivel'); }
         function fecharListaMobile() { document.getElementById('painel-lateral').classList.remove('aberto'); document.getElementById('overlay-mobile').classList.remove('visivel'); }
@@ -237,6 +244,21 @@
                 input.type = 'password';
                 eyeOpen.style.display = 'block';
                 eyeClosed.style.display = 'none';
+            }
+        }
+
+        // FUNÇÃO PARA TROCAR O MAPA ENTRE SATÉLITE E DRONE
+        function toggleDrone() {
+            const btn = document.getElementById('btn-drone');
+            if (mapa.hasLayer(camadaDrone)) {
+                mapa.removeLayer(camadaDrone);
+                btn.innerText = "Visualizar Drone";
+                btn.style.background = "#2563eb";
+            } else {
+                camadaDrone = L.tileLayer(linkDroneCliente, { maxZoom: 22 });
+                camadaDrone.addTo(mapa);
+                btn.innerText = "Visualizar Satélite";
+                btn.style.background = "#1a472a";
             }
         }
 
@@ -294,11 +316,54 @@
 
         async function validarAcessoELoadar(whatsapp) {
             const msgErro = document.getElementById('msg-erro-login');
-            const { data: cliente, error: dbError } = await supabaseClient.from('clientes').select('id, ativo').eq('whatsapp', whatsapp).single();
-            if (dbError || !cliente) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.innerText = "❌ Usuário não encontrado."; return; }
-            if (cliente.ativo === false) { await supabaseClient.auth.signOut(); mostrarTela('login'); msgErro.innerText = "⚠️ ACESSO BLOQUEADO. Plano expirado."; return; }
             
-            clienteId = cliente.id; msgErro.innerText = ""; mostrarTela('app'); buscarTalhoes();
+            // 1. Tenta achar o usuário na tabela 'usuarios' (Múltiplos logins)
+            let cliId = null;
+            let { data: usuario } = await supabaseClient.from('usuarios').select('cliente_id').eq('whatsapp', whatsapp).maybeSingle();
+            
+            if (usuario) {
+                cliId = usuario.cliente_id;
+            } else {
+                // 2. Se não achar, tenta achar direto na tabela 'clientes' (Login do dono)
+                let { data: cli } = await supabaseClient.from('clientes').select('id').eq('whatsapp', whatsapp).maybeSingle();
+                if (cli) cliId = cli.id;
+            }
+
+            if (!cliId) {
+                await supabaseClient.auth.signOut();
+                mostrarTela('login');
+                msgErro.style.color = "red";
+                msgErro.innerText = "❌ Usuário não encontrado na base de dados.";
+                return;
+            }
+
+            // 3. Busca os dados da Fazenda (cliente) usando o cliId achado
+            const { data: cliente, error: dbError } = await supabaseClient.from('clientes').select('id, ativo, link_drone').eq('id', cliId).single();
+            if (dbError || !cliente) {
+                await supabaseClient.auth.signOut();
+                mostrarTela('login');
+                msgErro.style.color = "red";
+                msgErro.innerText = "❌ Empresa não encontrada.";
+                return;
+            }
+            if (cliente.ativo === false) {
+                await supabaseClient.auth.signOut();
+                mostrarTela('login');
+                msgErro.style.color = "red";
+                msgErro.innerText = "⚠️ ACESSO BLOQUEADO. Plano expirado. Contate o suporte.";
+                return;
+            }
+            
+            clienteId = cliente.id;
+            linkDroneCliente = cliente.link_drone;
+            
+            if (linkDroneCliente) {
+                document.getElementById('btn-drone').style.display = 'block';
+            }
+            
+            msgErro.innerText = "";
+            mostrarTela('app');
+            buscarTalhoes();
         }
 
         async function buscarTalhoes() {
