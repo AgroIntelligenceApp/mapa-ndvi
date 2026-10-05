@@ -12,6 +12,16 @@
         .menu-item.locked { color: #9ca3af; cursor: not-allowed; }
         .menu-item.active { background-color: #2d8659; color: white; }
         .menu-category-title { font-size: 11px; text-transform: uppercase; color: #6b7280; margin-top: 15px; margin-bottom: 5px; padding-left: 5px; }
+
+        /* CSS PARA IMPRESSÃO (PDF) */
+        @media print {
+            body { background: white !important; height: auto !important; overflow: visible !important; }
+            header, aside, button, .btn-logout { display: none !important; } /* Esconde menu e botões */
+            .flex-1 { display: block !important; }
+            main { padding: 0 !important; overflow: visible !important; }
+            .bg-white { box-shadow: none !important; border: 1px solid #ddd !important; }
+            .bg-gray-100 { background: white !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
@@ -62,9 +72,16 @@
         </aside>
 
         <main class="flex-1 p-6 md:p-8 overflow-y-auto">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
-                <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800"><span id="saudacao">Bom dia</span>, <span id="nome-saudacao">Carregando...</span> 👋</h2>
+                    <p class="text-gray-500 text-sm mt-1">Pulso da sua fazenda em tempo real.</p>
+                </div>
+                <!-- BOTÃO EXPORTAR PDF -->
+                <button onclick="window.print()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Exportar PDF
+                </button>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -86,6 +103,7 @@
     <script>
         const supabaseClient = supabase.createClient('https://keiydgyountsuzjybsng.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlaXlkZ3lvdW50c3V6anlic25nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1ODY1MTksImV4cCI6MjA5ODE2MjUxOX0.Cd3TqUBZsNWV00AZGkrElJVmNlWPccDgtl-n95BVwjg');
         let permissoes = {};
+        let dadosTalhoesDashboard = [];
 
         function calcArea(geojson) { let a=0;const c=geojson.coordinates[0];const R=6378137;for(let i=0;i<c.length;i++){const[l1,w1]=c[i];const[l2,w2]=c[(i+1)%c.length];a+=((l2-l1)*Math.PI/180)*(2+Math.sin(w1*Math.PI/180)+Math.sin(w2*Math.PI/180));}return Math.abs(a*R*R/2)/10000;}
         function formatBR(num, dec = 2) { return num.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
@@ -127,6 +145,7 @@
                 
                 const { data: talhoes } = await supabaseClient.from('talhoes').select('codigo_talhao, codigo_bloco, geom, area_hectares, tipo_plantio, ndvi_medio, ndvi_medio_anterior').eq('cliente_id', clienteId);
                 if (talhoes) {
+                    dadosTalhoesDashboard = talhoes;
                     let tg=0, tp=0, ts=0;
                     let alertas = [];
                     
