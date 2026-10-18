@@ -86,6 +86,62 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500"><p class="text-sm text-gray-500 font-medium">Talhões</p><p class="text-2xl font-bold text-yellow-600 mt-1" id="card-talhoes">0</p></div>
             </div>
 
+            <!-- CARD DE CLIMA EM TEMPO REAL -->
+            <div class="rounded-xl shadow-sm p-6 mb-8 border border-gray-100" id="card-clima" style="background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); transition: background 0.5s;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-800">🌤️ Clima Agora na Fazenda</h3>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500" id="clima-local">Carregando localização...</p>
+                        <p class="text-xs text-gray-400" id="clima-atualizado"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <!-- Coluna principal: ícone + temperatura + condição -->
+                    <div class="flex items-center gap-4">
+                        <div class="text-6xl" id="clima-icone">⏳</div>
+                        <div>
+                            <p class="text-5xl font-bold text-gray-800" id="clima-temp">--°</p>
+                            <p class="text-sm text-gray-600 font-medium" id="clima-condicao">Carregando...</p>
+                            <p class="text-xs text-gray-500 mt-1">Sensação: <span id="clima-sensacao">--°</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Coluna de mini-cards -->
+                    <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">💧 Umidade</p>
+                            <p class="text-lg font-bold text-blue-600" id="clima-umidade">--%</p>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">🌧️ Chuva (1h)</p>
+                            <p class="text-lg font-bold text-cyan-600" id="clima-precip">-- mm</p>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">☔ Prob. Chuva</p>
+                            <p class="text-lg font-bold text-indigo-600" id="clima-prob">--%</p>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">💨 Vento</p>
+                            <p class="text-lg font-bold text-gray-700" id="clima-vento">-- km/h</p>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">☀️ Índice UV</p>
+                            <p class="text-lg font-bold text-orange-500" id="clima-uv">--</p>
+                        </div>
+                        <div class="bg-white/70 rounded-lg p-3 backdrop-blur">
+                            <p class="text-xs text-gray-500 flex items-center gap-1">🌡️ Pressão</p>
+                            <p class="text-lg font-bold text-gray-700" id="clima-pressao">-- hPa</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerta/agro-dica -->
+                <div class="mt-4 p-3 rounded-lg bg-white/60 backdrop-blur text-sm text-gray-700 border border-white/40" id="clima-aviso">
+                    <span class="font-semibold">🚜 Dica do dia:</span> <span id="clima-aviso-texto">Carregando recomendação...</span>
+                </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
                 <h3 class="font-bold text-gray-800 mb-4">🚨 Variação de Vigor (Queda de Biomassa)</h3>
                 <div class="space-y-3 text-sm overflow-y-auto" style="max-height: 400px;" id="variacoes-container">
@@ -208,6 +264,156 @@
         function checkLock(modulo) { alert('Módulo Bloqueado! Contate o suporte para liberar.'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         async function deslogar() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+
+        // ====== CLIMA EM TEMPO REAL (Open-Meteo - API gratuita, sem chave) ======
+        const WMO_CODE_PT = {
+            0: { txt: 'Céu limpo', icon: '☀️', bg: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' },
+            1: { txt: 'Predom. limpo', icon: '🌤️', bg: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)' },
+            2: { txt: 'Parc. nublado', icon: '⛅', bg: 'linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)' },
+            3: { txt: 'Nublado', icon: '☁️', bg: 'linear-gradient(135deg, #d1d5db 0%, #e5e7eb 100%)' },
+            45: { txt: 'Névoa', icon: '🌫️', bg: 'linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)' },
+            48: { txt: 'Névoa com geada', icon: '🌫️', bg: 'linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)' },
+            51: { txt: 'Garoa leve', icon: '🌦️', bg: 'linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)' },
+            53: { txt: 'Garoa moderada', icon: '🌦️', bg: 'linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)' },
+            55: { txt: 'Garoa intensa', icon: '🌧️', bg: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)' },
+            61: { txt: 'Chuva fraca', icon: '🌦️', bg: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)' },
+            63: { txt: 'Chuva moderada', icon: '🌧️', bg: 'linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%)' },
+            65: { txt: 'Chuva forte', icon: '🌧️', bg: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)' },
+            66: { txt: 'Chuva congelante', icon: '🌧️❄️', bg: 'linear-gradient(135deg, #93c5fd 0%, #bfdbfe 100%)' },
+            67: { txt: 'Chuva congelante forte', icon: '🌧️❄️', bg: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)' },
+            71: { txt: 'Neve fraca', icon: '🌨️', bg: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' },
+            73: { txt: 'Neve moderada', icon: '🌨️', bg: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' },
+            75: { txt: 'Neve intensa', icon: '❄️', bg: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)' },
+            77: { txt: 'Grãos de neve', icon: '🌨️', bg: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' },
+            80: { txt: 'Pancadas leves', icon: '🌦️', bg: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 100%)' },
+            81: { txt: 'Pancadas moderadas', icon: '🌧️', bg: 'linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%)' },
+            82: { txt: 'Pancadas violentas', icon: '⛈️', bg: 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)' },
+            85: { txt: 'Neve fraca', icon: '🌨️', bg: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)' },
+            86: { txt: 'Neve forte', icon: '❄️', bg: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)' },
+            95: { txt: 'Tempestade', icon: '⛈️', bg: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)' },
+            96: { txt: 'Tempestade c/ granizo', icon: '⛈️🧊', bg: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' },
+            99: { txt: 'Tempestade severa', icon: '⛈️🧊', bg: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)' }
+        };
+
+        function classificarUV(uv) {
+            if (uv <= 2) return { label: 'Baixo', color: '#16a34a' };
+            if (uv <= 5) return { label: 'Moderado', color: '#ca8a04' };
+            if (uv <= 7) return { label: 'Alto', color: '#ea580c' };
+            if (uv <= 10) return { label: 'Muito alto', color: '#dc2626' };
+            return { label: 'Extremo', color: '#7c3aed' };
+        }
+
+        function gerarDicaAgro(c, probChuva, vento, uv) {
+            const dicas = [];
+            // Chuva
+            if (c.precipitation >= 5 || probChuva >= 70) {
+                dicas.push('☂️ Chuva intensa ou provável — evite aplicações de defensivos e tratos culturais nas próximas horas (risco de lavagem).');
+            } else if (probChuva >= 40) {
+                dicas.push('⚠️ Risco de chuva moderada — agende pulverizações com cautela e confira previsão horária.');
+            } else if (c.precipitation < 0.1 && probChuva < 20) {
+                dicas.push('☀️ Sem chuva prevista — janela boa para pulverização e colheita. Monitore irrigação em talhões críticos.');
+            }
+            // Umidade
+            if (c.relative_humidity_2m < 40) {
+                dicas.push('🥵 Umidade baixa — maior evaporação, revise lâmina de irrigação e atenção à ocorrência de incêndios.');
+            } else if (c.relative_humidity_2m > 85) {
+                dicas.push('💧 Umidade elevada — favorece doenças fúngicas (ferrugem, míldio). Mantenha monitoramento de pragas.');
+            }
+            // Vento
+            if (vento > 25) {
+                dicas.push('💨 Vento forte — NÃO pulverizar (deriva elevada). Direcionar operações a áreas protegidas.');
+            } else if (vento > 10) {
+                dicas.push('🍃 Vento moderado — pulverização permitida, mas use gotas maiores para reduzir deriva.');
+            }
+            // UV
+            if (uv >= 8) {
+                dicas.push('🧴 UV elevado — reforçar EPI e hidratação dos colaboradores em campo.');
+            }
+            return dicas.length ? dicas.join(' ') : '🌿 Condições estáveis — dia propício às operações de campo. Aproveite a janela para manutenções e rondas.';
+        }
+
+        async function buscarClima(lat, lon, nomeLocal) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+                `&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure` +
+                `&hourly=precipitation_probability,uv_index` +
+                `&timezone=auto&forecast_days=1`;
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                const c = data.current;
+                // Hora atual para prob. chuva e UV
+                const horaAtual = new Date().getHours();
+                const idx = data.hourly.time.findIndex(t => new Date(t).getHours() === horaAtual && new Date(t).getDate() === new Date().getDate());
+                const probChuva = idx >= 0 ? (data.hourly.precipitation_probability[idx] ?? 0) : 0;
+                const uv = idx >= 0 ? (data.hourly.uv_index[idx] ?? 0) : 0;
+                const wmo = WMO_CODE_PT[c.weather_code] || { txt: '—', icon: '🌡️', bg: 'linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%)' };
+
+                // Atualiza fundo
+                const card = document.getElementById('card-clima');
+                card.style.background = c.is_day ? wmo.bg : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)';
+
+                // Preenche elementos
+                document.getElementById('clima-icone').innerText = c.is_day ? wmo.icon : '🌙';
+                document.getElementById('clima-temp').innerText = `${Math.round(c.temperature_2m)}°C`;
+                document.getElementById('clima-condicao').innerText = wmo.txt;
+                document.getElementById('clima-sensacao').innerText = `${Math.round(c.apparent_temperature)}°C`;
+                document.getElementById('clima-umidade').innerText = `${c.relative_humidity_2m}%`;
+                document.getElementById('clima-precip').innerText = `${(c.precipitation ?? 0).toFixed(1)} mm`;
+                document.getElementById('clima-prob').innerText = `${probChuva}%`;
+                document.getElementById('clima-vento').innerText = `${Math.round(c.wind_speed_10m)} km/h`;
+                const uvCls = classificarUV(uv);
+                const uvEl = document.getElementById('clima-uv');
+                uvEl.innerText = `${uv.toFixed(1)} (${uvCls.label})`;
+                uvEl.style.color = uvCls.color;
+                document.getElementById('clima-pressao').innerText = `${Math.round(c.surface_pressure ?? 0)} hPa`;
+
+                // Localização e horário
+                document.getElementById('clima-local').innerText = nomeLocal || `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+                document.getElementById('clima-atualizado').innerText = `Atualizado: ${new Date().toLocaleTimeString('pt-BR')}`;
+
+                // Dica agronômica
+                document.getElementById('clima-aviso-texto').innerText = gerarDicaAgro(c, probChuva, c.wind_speed_10m, uv);
+            } catch (e) {
+                console.error('Erro ao buscar clima:', e);
+                document.getElementById('clima-condicao').innerText = 'Não foi possível carregar o clima.';
+                document.getElementById('clima-aviso-texto').innerText = 'Verifique sua conexão ou recarregue a página.';
+            }
+        }
+
+        async function iniciarClima() {
+            // Tenta geolocalização do navegador; se falhar/for negada, usa fallback centro do Brasil (Goiás ~ -15.78, -47.92)
+            const latPadrao = -15.7817, lonPadrao = -47.9217;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+                        let nomeLocal = `Lat ${lat.toFixed(3)}, Lon ${lon.toFixed(3)}`;
+                        try {
+                            // Reverse geocoding gratuito via Open-Meteo (sem chave)
+                            const r = await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=pt&count=1`);
+                            const j = await r.json();
+                            if (j.results && j.results[0]) {
+                                const loc = j.results[0];
+                                nomeLocal = [loc.name, loc.admin1, loc.country].filter(Boolean).join(' - ');
+                            }
+                        } catch (_) {}
+                        buscarClima(lat, lon, nomeLocal);
+                    },
+                    (err) => {
+                        console.warn('Geolocalização negada/indisponível, usando localização padrão (Centro do Brasil).', err);
+                        buscarClima(latPadrao, lonPadrao, 'Centro do Brasil (localização padrão)');
+                    },
+                    { timeout: 8000, enableHighAccuracy: false }
+                );
+            } else {
+                buscarClima(latPadrao, lonPadrao, 'Centro do Brasil (localização padrão)');
+            }
+        }
+
+        // Inicia clima imediatamente ao carregar a página (independente do login)
+        iniciarClima();
+        // Atualiza a cada 10 minutos
+        setInterval(iniciarClima, 10 * 60 * 1000);
     </script>
 </body>
 </html>
